@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7efd9">
+  <meta name="description" content="Lilopia is a cozy pretend-play world where every little idea can become a big adventure.">
+  <title>Lilopia — a little world of big imagination</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #28433b;
+      --muted: #62776c;
+      --cream: #fffaf0;
+      --paper: #f7efd9;
+      --green: #79a88b;
+      --deep-green: #3c715c;
+      --coral: #ef9278;
+      --yellow: #f1cb68;
+      --lilac: #b7a8d9;
+      --shadow: 0 14px 34px #405c4314;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--ink); background: var(--paper); font-family: ui-rounded, "Trebuchet MS", system-ui, sans-serif; }
+    button { color: inherit; font: inherit; }
+    .app { min-height: 100vh; overflow: hidden; background: radial-gradient(ellipse at 15% 0%, #fff9e9 0, transparent 38%), var(--paper); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: 1180px; padding: 20px 24px; margin: auto; }
+    .brand { display: flex; align-items: center; gap: 11px; border: 0; background: transparent; cursor: pointer; }
+    .brand-mark { display: grid; width: 43px; height: 43px; place-items: center; border-radius: 16px 16px 18px 12px; background: #f1cb68; font-size: 25px; transform: rotate(-5deg); box-shadow: 0 5px 0 #dfa94a; }
+    .brand-name { font-size: 23px; font-weight: 900; letter-spacing: -.8px; }
+    .brand-tag { display: block; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .4px; }
+    .nav { display: flex; gap: 8px; align-items: center; }
+    .nav button, .pill { border: 0; border-radius: 999px; padding: 11px 15px; background: #fffaf0bf; font-weight: 800; cursor: pointer; transition: transform .15s, background .15s; }
+    button:hover { transform: translateY(-2px); }
+    button:focus-visible { outline: 3px solid #f1ad4a; outline-offset: 3px; }
+    .nav button[aria-current="page"] { background: var(--deep-green); color: white; }
+    .main { max-width: 1120px; padding: 18px 24px 44px; margin: auto; }
+    .hero { display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 24px; min-height: 280px; padding: 30px 40px; border: 2px solid #fffefa; border-radius: 30px; background: linear-gradient(125deg,#fffaf0,#e9f1d8); box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .hero:after { content: ""; position: absolute; width: 330px; height: 330px; right: -60px; top: -126px; border-radius: 50%; background: #f1cb6833; }
+    .eyebrow { color: var(--deep-green); font-size: 12px; letter-spacing: 1.5px; font-weight: 900; text-transform: uppercase; }
+    h1 { max-width: 500px; margin: 9px 0 12px; font-size: clamp(34px, 5vw, 54px); line-height: 1.02; letter-spacing: -2px; }
+    .hero p { max-width: 435px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.55; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .primary, .secondary { border: 0; border-radius: 999px; padding: 13px 20px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 #315c4930; transition: transform .15s; }
+    .primary { background: var(--deep-green); color: white; }
+    .secondary { background: white; }
+    .hero-art { z-index: 1; display: grid; place-items: center; min-height: 190px; position: relative; }
+    .sun { position: absolute; top: 0; right: 30px; font-size: 46px; }
+    .hill { position: absolute; bottom: 4px; width: 95%; height: 90px; border-radius: 55% 55% 18px 18px; background: #bad6a0; transform: rotate(-4deg); }
+    .hill.two { bottom: -13px; left: 12px; width: 75%; height: 68px; background: #95c1a0; transform: rotate(6deg); }
+    .house { z-index: 2; position: relative; margin-top: -17px; font-size: clamp(92px, 13vw, 142px); filter: drop-shadow(0 9px 0 #52775225); }
+    .friend { z-index: 3; position: absolute; right: 14%; bottom: 27px; font-size: 70px; animation: bob 2.4s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(-8px) rotate(3deg); } }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin: 30px 2px 14px; }
+    h2 { margin: 0; font-size: 23px; letter-spacing: -.5px; }
+    .section-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .room-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .room-card { min-height: 156px; padding: 18px; text-align: left; border: 2px solid #fffefa; border-radius: 23px; background: var(--cream); box-shadow: var(--shadow); cursor: pointer; position: relative; overflow: hidden; }
+    .room-card:after { content: ""; position: absolute; right: -18px; bottom: -35px; width: 120px; height: 100px; border-radius: 50%; opacity: .6; background: var(--wash, #d9edce); }
+    .room-card strong, .room-card span { position: relative; z-index: 1; display: block; }
+    .room-card .scene { margin-bottom: 7px; font-size: 41px; }
+    .room-card strong { font-size: 17px; }
+    .room-card span:last-child { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .room-card[aria-pressed="true"] { border-color: var(--deep-green); }
+    .play-panel { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(230px,.85fr); gap: 16px; margin-top: 16px; }
+    .scene-panel, .story-panel { border: 2px solid white; border-radius: 24px; background: #fffaf0; box-shadow: var(--shadow); }
+    .scene-panel { min-height: 286px; overflow: hidden; position: relative; background: linear-gradient(#d8eee2 0 62%, #b5d49e 62% 100%); }
+    .scene-panel[data-room="kitchen"] { background: linear-gradient(#f8e7cf 0 68%, #d9aa7f 68%); }
+    .scene-panel[data-room="bedroom"] { background: linear-gradient(#d9d5ef 0 68%, #baa8d3 68%); }
+    .scene-sky { position: absolute; top: 13px; left: 17px; color: #557568; font-size: 13px; font-weight: 900; }
+    .scene-window { position: absolute; top: 48px; left: 9%; width: 80px; height: 90px; border: 7px solid #fff8e8; border-radius: 12px; background: linear-gradient(#a9d6e4 0 60%,#9ac68d 60%); box-shadow: 0 4px 0 #789b7d; }
+    .scene-window:before { content:""; position:absolute; top:0; bottom:0; left:50%; border-left:4px solid #fff8e8; }
+    .scene-window:after { content:""; position:absolute; top:50%; left:0; right:0; border-top:4px solid #fff8e8; }
+    .scene-decor { position:absolute; top:42px; right:8%; font-size:40px; }
+    .playmate { position:absolute; left:50%; bottom:27px; z-index:2; font-size:88px; transform:translateX(-50%); transition:transform .4s; filter:drop-shadow(0 6px 0 #304e3533); }
+    .playmate.hop { animation: hop .55s ease; }
+    @keyframes hop { 50% { transform:translate(-50%,-36px) rotate(-8deg) scale(1.06); } }
+    .toy-row { position:absolute; left:0; right:0; bottom:11px; display:flex; justify-content:center; gap:16px; z-index:3; }
+    .toy { border:0; min-width:54px; height:52px; border-radius:17px; background:#fff9e8; font-size:27px; cursor:pointer; box-shadow:0 4px 0 #314b3930; }
+    .toy:hover { transform:translateY(-5px) rotate(-4deg); }
+    .story-panel { padding:20px; display:flex; flex-direction:column; justify-content:space-between; }
+    .story-panel h3 { margin:0 0 7px; font-size:19px; }
+    .story-panel p { margin:0; color:var(--muted); font-size:14px; line-height:1.5; }
+    .spark-count { display:flex; align-items:center; gap:8px; margin-top:14px; color:#83662a; font-weight:900; }
+    .toast { min-height:50px; display:flex; align-items:center; margin-top:12px; padding:11px 13px; border-radius:14px; background:#f5efdb; color:#5b6c58; font-size:13px; font-weight:800; }
+    .packs { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .pack { padding:17px; border:2px solid white; border-radius:21px; background:#fffaf0; box-shadow:var(--shadow); }
+    .pack .pack-art { font-size:35px; }
+    .pack h3 { margin:5px 0; font-size:16px; }
+    .pack p { min-height:38px; margin:0 0 12px; color:var(--muted); font-size:12px; line-height:1.45; }
+    .pack button { width:100%; border:0; border-radius:999px; padding:10px; background:#eee8f5; color:#665b7f; font-size:12px; font-weight:900; cursor:pointer; }
+    .price-note { margin:12px 2px 0; color:var(--muted); font-size:11px; line-height:1.5; }
+    .footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:26px; padding:16px 2px 0; border-top:1px solid #dcd5c1; color:var(--muted); font-size:12px; }
+    .footer button { border:0; background:transparent; color:var(--deep-green); font-weight:900; cursor:pointer; }
+    .dialog-backdrop { position:fixed; inset:0; z-index:10; display:none; place-items:center; padding:18px; background:#18332bc4; }
+    .dialog-backdrop.open { display:grid; }
+    .dialog { width:min(100%,390px); padding:25px; border:3px solid white; border-radius:26px; background:var(--cream); box-shadow:0 18px 60px #14251f55; }
+    .dialog h2 { margin-bottom:9px; }
+    .dialog p { color:var(--muted); line-height:1.5; }
+    .gate-math { padding:10px 14px; border-radius:12px; background:#f1ead7; font-size:21px; font-weight:900; }
+    .dialog input { width:100%; padding:13px; margin:10px 0 14px; border:2px solid #d9dfca; border-radius:12px; font:inherit; font-size:18px; }
+    .dialog-actions { display:flex; justify-content:flex-end; gap:9px; }
+    .dialog-actions button { border:0; border-radius:999px; padding:11px 16px; background:#e9e4d6; font-weight:900; cursor:pointer; }
+    .dialog-actions .primary { background:var(--deep-green); color:white; }
+    .live-region { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+    @media (max-width:740px) {
+      .topbar { padding:14px 16px; } .nav button { padding:9px 11px; font-size:12px; }
+      .main { padding:12px 15px 30px; } .hero { grid-template-columns:1fr; padding:24px; gap:5px; }
+      .hero-art { min-height:170px; } .hero:after { right:-90px; top:auto; bottom:-170px; }
+      .room-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+      .room-card { min-height:129px; padding:12px 10px; border-radius:18px; } .room-card .scene { font-size:32px; }
+      .room-card strong { font-size:14px; } .room-card span:last-child { font-size:10px; }
+      .play-panel { grid-template-columns:1fr; } .scene-panel { min-height:260px; }
+      .packs { grid-template-columns:1fr; } .pack { display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:10px; }
+      .pack .pack-art { grid-row:span 2; } .pack h3 { margin:0; } .pack p { min-height:0; margin:3px 0 0; } .pack button { grid-column:3; grid-row:1 / span 2; width:auto; }
+    }
+    @media (max-width:430px) { .brand-tag { display:none; } .nav { gap:4px; } .nav button { padding:8px 9px; font-size:11px; } .section-head { align-items:start; flex-direction:column; } }
+    @media (prefers-reduced-motion:reduce) { *, *:before, *:after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="brand" id="homeButton" aria-label="Lilopia home"><span class="brand-mark" aria-hidden="true">🌼</span><span class="brand-name">lilopia<span class="brand-tag">a little world of big imagination</span></span></button>
+      <nav class="nav" aria-label="Main navigation">
+        <button aria-current="page" data-scroll="play">Play</button>
+        <button data-scroll="worlds">Worlds</button>
+        <button data-scroll="parent">Grown-ups</button>
+      </nav>
+    </header>
+    <main class="main">
+      <section class="hero" aria-labelledby="welcome-title">
+        <div>
+          <div class="eyebrow">Your world, your way</div>
+          <h1 id="welcome-title">A little world for big ideas.</h1>
+          <p>Make up a story, plant a tiny garden, or give your teddy a very important job. In Lilopia, you get to decide what happens next.</p>
+          <div class="hero-actions"><button class="primary" id="startButton">Let’s play <span aria-hidden="true">→</span></button><button class="secondary" data-scroll="worlds">See the worlds</button></div>
+        </div>
+        <div class="hero-art" aria-hidden="true"><span class="sun">☀️</span><div class="hill"></div><div class="hill two"></div><span class="house">🏡</span><span class="friend">🐻</span></div>
+      </section>
+
+      <section id="play" aria-labelledby="play-title">
+        <div class="section-head"><div><h2 id="play-title">Pick a place to play</h2><p>There’s no wrong way to make believe.</p></div><span class="pill" id="savedLabel">✨ Your play saved</span></div>
+        <div class="room-grid" role="group" aria-label="Choose a play room">
+          <button class="room-card" data-room-button="garden" aria-pressed="true" style="--wash:#d9edce"><span class="scene" aria-hidden="true">🌷🐝</span><strong>Sunny Garden</strong><span>Grow, dig, and explore</span></button>
+          <button class="room-card" data-room-button="kitchen" aria-pressed="false" style="--wash:#f5dec4"><span class="scene" aria-hidden="true">🥣🍓</span><strong>Cozy Kitchen</strong><span>Mix up a pretend treat</span></button>
+          <button class="room-card" data-room-button="bedroom" aria-pressed="false" style="--wash:#e3dcf5"><span class="scene" aria-hidden="true">🧸🌙</span><strong>Dreamy Bedroom</strong><span>Make a bedtime story</span></button>
+        </div>
+        <div class="play-panel">
+          <div class="scene-panel" id="scenePanel" data-room="garden" aria-label="Interactive play scene">
+            <span class="scene-sky" id="sceneTitle">SUNNY GARDEN</span><div class="scene-window" aria-hidden="true"></div><span class="scene-decor" id="sceneDecor" aria-hidden="true">🌤️</span>
+            <span class="playmate" id="playmate" aria-label="Your little friend">🐻</span>
+            <div class="toy-row" id="toyRow" aria-label="Play with an object"></div>
+          </div>
+          <aside class="story-panel" aria-label="Your story">
+            <div><h3 id="storyHeading">A garden adventure</h3><p id="storyText">The little bear found a sunny spot. What should happen in this story?</p><div class="spark-count"><span aria-hidden="true">✨</span><span id="sparkCount">0</span> story sparks</div></div>
+            <div><div class="toast" id="toast" role="status" aria-live="polite">Tap something in the scene to begin!</div><button class="secondary" id="newStory" style="width:100%;margin-top:10px">Start a new story ↻</button></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="worlds" aria-labelledby="world-title">
+        <div class="section-head"><div><h2 id="world-title">More worlds to discover</h2><p>Little previews of adventures waiting for you.</p></div></div>
+        <div class="packs">
+          <article class="pack"><span class="pack-art" aria-hidden="true">🚀</span><div><h3>Moonbeam Mission</h3><p>Build a rocket and wave hello to the stars.</p></div><button data-pack="Moonbeam Mission">🔒 Explore · $5.99</button></article>
+          <article class="pack"><span class="pack-art" aria-hidden="true">🐠</span><div><h3>Bubble Bay</h3><p>Swim with sea friends and find hidden shells.</p></div><button data-pack="Bubble Bay">🔒 Explore · $5.99</button></article>
+          <article class="pack"><span class="pack-art" aria-hidden="true">🏰</span><div><h3>Cloud Castle</h3><p>Invent a royal parade in the clouds.</p></div><button data-pack="Cloud Castle">🔒 Explore · $5.99</button></article>
+        </div>
+        <p class="price-note">Lilopia’s starter world is free. Each expansion is a one-time $5.99 purchase. Grown-ups can also choose a one-time $3.99 ad-free option. This prototype does not take payments.</p>
+      </section>
+
+      <footer class="footer" id="parent"><span>Made for curious minds and the grown-ups who cheer them on.</span><button id="parentInfo">Grown-up corner · Privacy & settings</button></footer>
+    </main>
+  </div>
+  <div class="dialog-backdrop" id="dialogBackdrop" role="presentation">
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" aria-describedby="dialogBody">
+      <h2 id="dialogTitle">Grown-up check</h2><p id="dialogBody">To open grown-up settings, solve this little number puzzle.</p>
+      <div class="gate-math" id="gateQuestion"></div><input id="gateAnswer" type="number" inputmode="numeric" aria-label="Answer to the number puzzle" autocomplete="off">
+      <div class="dialog-actions"><button id="cancelDialog">Maybe later</button><button class="primary" id="submitGate">Continue</button></div>
+    </section>
+  </div>
+  <div class="live-region" id="liveRegion" aria-live="polite"></div>
+  <script>
+    (() => {
+      const rooms = {
+        garden: { title: "Sunny Garden", decor: "🌤️", friend: "🐻", heading: "A garden adventure", intro: "The little bear found a sunny spot. What should happen in this story?", toys: [["🪴", "Plant a seed"], ["🦋", "Meet a butterfly"], ["💧", "Water the flowers"]] },
+        kitchen: { title: "Cozy Kitchen", decor: "🍪", friend: "🐰", heading: "A kitchen adventure", intro: "Bunny has an apron on and a pretend recipe to invent. What comes next?", toys: [["🥣", "Mix the bowl"], ["🍓", "Add a strawberry"], ["🧁", "Make a cupcake"]] },
+        bedroom: { title: "Dreamy Bedroom", decor: "🌙", friend: "🐱", heading: "A bedtime adventure", intro: "Kitty is tucked in, but one more story is waiting to be told. What happens?", toys: [["📖", "Open a storybook"], ["⭐", "Catch a star"], ["🧸", "Hug a teddy"]] }
+      };
+      const moments = {
+        "Plant a seed": ["A tiny seed moved into its new home. What a brave little start!", "Your seed is ready to grow whenever you are."],
+        "Meet a butterfly": ["A butterfly landed nearby and showed off its sparkly wings.", "The garden has a brand-new friend."],
+        "Water the flowers": ["The flowers had a little drink and stretched toward the sunshine.", "A few happy blooms popped up!"],
+        "Mix the bowl": ["Bunny stirred up a bowl of pretend-yummy magic.", "The recipe is getting wonderfully silly."],
+        "Add a strawberry": ["One bright strawberry made the pretend recipe extra special.", "Bunny says: excellent berry choice."],
+        "Make a cupcake": ["A tiny pretend cupcake came out with a mountain of frosting.", "The cupcake is ready for an imaginary party."],
+        "Open a storybook": ["The book opened to a page about a cat who could fly.", "A new story is beginning!"],
+        "Catch a star": ["A friendly star floated down for a bedtime hello.", "The night sky is full of possibilities."],
+        "Hug a teddy": ["Teddy got the coziest hug in the whole room.", "That’s a very good way to end a busy day."]
+      };
+      const scene = document.getElementById("scenePanel");
+      const toyRow = document.getElementById("toyRow");
+      const toast = document.getElementById("toast");
+      const sparkCount = document.getElementById("sparkCount");
+      const backdrop = document.getElementById("dialogBackdrop");
+      let currentRoom = "garden";
+      let sparks = Number(localStorage.getItem("lilopia-sparks") || 0);
+      let gateAnswer = 0;
+      let pendingAction = null;
+      sparkCount.textContent = sparks;
+
+      function say(message) { toast.textContent = message; document.getElementById("liveRegion").textContent = message; }
+      function showRoom(key) {
+        currentRoom = key;
+        const room = rooms[key];
+        scene.dataset.room = key;
+        document.getElementById("sceneTitle").textContent = room.title.toUpperCase();
+        document.getElementById("sceneDecor").textContent = room.decor;
+        document.getElementById("playmate").textContent = room.friend;
+        document.getElementById("storyHeading").textContent = room.heading;
+        document.getElementById("storyText").textContent = room.intro;
+        document.querySelectorAll("[data-room-button]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.roomButton === key)));
+        toyRow.replaceChildren(...room.toys.map(([emoji, label]) => {
+          const button = document.createElement("button");
+          button.type = "button"; button.className = "toy"; button.textContent = emoji; button.title = label; button.setAttribute("aria-label", label);
+          button.addEventListener("click", () => playMoment(label));
+          return button;
+        }));
+        say(`You’re in the ${room.title}. Pick something to play with!`);
+      }
+      function playMoment(label) {
+        const [message, next] = moments[label];
+        document.getElementById("storyText").textContent = message;
+        sparks += 1;
+        sparkCount.textContent = sparks;
+        localStorage.setItem("lilopia-sparks", String(sparks));
+        const friend = document.getElementById("playmate");
+        friend.classList.remove("hop"); void friend.offsetWidth; friend.classList.add("hop");
+        say(`${next} ✨`);
+      }
+      function openGate(action) {
+        pendingAction = action;
+        const a = 3 + Math.floor(Math.random() * 6), b = 2 + Math.floor(Math.random() * 5);
+        gateAnswer = a + b;
+        document.getElementById("gateQuestion").textContent = `${a} + ${b} = ?`;
+        document.getElementById("gateAnswer").value = "";
+        backdrop.classList.add("open");
+        setTimeout(() => document.getElementById("gateAnswer").focus(), 0);
+      }
+      function closeGate() { backdrop.classList.remove("open"); pendingAction = null; }
+
+      document.querySelectorAll("[data-room-button]").forEach(button => button.addEventListener("click", () => showRoom(button.dataset.roomButton)));
+      document.querySelectorAll("[data-scroll]").forEach(button => button.addEventListener("click", () => document.getElementById(button.dataset.scroll).scrollIntoView({ behavior: "smooth" })));
+      document.getElementById("startButton").addEventListener("click", () => document.getElementById("play").scrollIntoView({ behavior: "smooth" }));
+      document.getElementById("homeButton").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+      document.getElementById("newStory").addEventListener("click", () => { const room = rooms[currentRoom]; document.getElementById("storyText").textContent = room.intro; say("A fresh story is ready. What should happen first?"); });
+      document.querySelectorAll("[data-pack]").forEach(button => button.addEventListener("click", () => openGate(() => say(`${button.dataset.pack} is a grown-up purchase. Payment is not enabled in this preview.`))));
+      document.getElementById("parentInfo").addEventListener("click", () => openGate(() => {
+        document.getElementById("dialogTitle").textContent = "Grown-up corner";
+        document.getElementById("dialogBody").textContent = "This preview keeps story sparks on this device only. No account, ads, or payment processing is connected.";
+        document.querySelector(".gate-math").textContent = "Grown-up settings are open.";
+        document.getElementById("gateAnswer").hidden = true;
+        document.getElementById("submitGate").hidden = true;
+        document.getElementById("cancelDialog").textContent = "Close";
+        backdrop.classList.add("open");
+      }));
+      document.getElementById("submitGate").addEventListener("click", () => {
+        if (Number(document.getElementById("gateAnswer").value) !== gateAnswer) { say("That answer didn’t match. Try the number puzzle again."); document.getElementById("gateAnswer").select(); return; }
+        const action = pendingAction; closeGate();
+        document.getElementById("dialogTitle").textContent = "Grown-up check";
+        document.getElementById("dialogBody").textContent = "To open grown-up settings, solve this little number puzzle.";
+        document.querySelector(".gate-math").textContent = ""; document.getElementById("gateAnswer").hidden = false; document.getElementById("submitGate").hidden = false;
+        action?.();
+      });
+      document.getElementById("cancelDialog").addEventListener("click", () => { closeGate(); document.getElementById("dialogTitle").textContent = "Grown-up check"; document.getElementById("dialogBody").textContent = "To open grown-up settings, solve this little number puzzle."; document.querySelector(".gate-math").textContent = ""; document.getElementById("gateAnswer").hidden = false; document.getElementById("submitGate").hidden = false; document.getElementById("cancelDialog").textContent = "Maybe later"; });
+      backdrop.addEventListener("click", event => { if (event.target === backdrop) document.getElementById("cancelDialog").click(); });
+      showRoom("garden");
+    })();
+  </script>
+</body>
+</html>
