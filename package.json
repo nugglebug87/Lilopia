@@ -1,0 +1,9 @@
+{
+  "name": "lilopia",
+  "private": true,
+  "description": "LILOPIA: a 2.5D life-simulation and pretend-play game. Your World. Your Stories. Your Rules!",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build:artifact": "python3 tools/build-artifact.py"
+  }
+}
