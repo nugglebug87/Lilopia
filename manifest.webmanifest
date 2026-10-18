@@ -1,0 +1,19 @@
+{
+  "name": "LILOPIA",
+  "short_name": "LILOPIA",
+  "description": "Your World. Your Stories. Your Rules! A pretend-play life simulation game for everyone.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#f6eeff",
+  "theme_color": "#f3e8ff",
+  "categories": ["games", "kids", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

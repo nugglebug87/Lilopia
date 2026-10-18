@@ -1,0 +1,76 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The game itself lives at the repository root (index.html, src/, assets/).
+// It is copied into the APK at build time so there is one copy of the game to maintain.
+def gameRoot = rootProject.file('..')
+def gameAssets = layout.buildDirectory.dir('generated/gameAssets')
+
+def copyGame = tasks.register('copyGame', Sync) {
+    from(gameRoot) {
+        include 'index.html'
+        // The installable-web-app tags (manifest, icons) are not needed inside the app.
+        def inPwa = false
+        filter { String line ->
+            if (line.contains('@@PWA-START@@')) { inPwa = true; return null }
+            if (line.contains('@@PWA-END@@')) { inPwa = false; return null }
+            return inPwa ? null : line
+        }
+    }
+    from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**' }
+    into gameAssets.map { it.dir('game') }
+}
+
+// Optional release signing: put these in android/keystore.properties (never commit it).
+def ksFile = rootProject.file('keystore.properties')
+def ks = new Properties()
+if (ksFile.exists()) ksFile.withInputStream { ks.load(it) }
+
+android {
+    namespace 'com.lilopia.game'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.lilopia.game'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0-prototype'
+    }
+
+    signingConfigs {
+        if (ks['storeFile']) {
+            release {
+                storeFile rootProject.file(ks['storeFile'])
+                storePassword ks['storePassword']
+                keyAlias ks['keyAlias']
+                keyPassword ks['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Without a keystore the release APK is signed with the debug key: fine for
+            // installing the prototype on test phones, not accepted by Google Play.
+            signingConfig ks['storeFile'] ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    sourceSets {
+        main.assets.srcDir gameAssets
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.named('preBuild') { dependsOn copyGame }
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
