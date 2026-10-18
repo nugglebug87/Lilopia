@@ -23,6 +23,40 @@ node tests/e2e/interactions.js "$PWD/index.html" /tmp/shots   # 24 checks: cooki
 node tests/e2e/screens.js "$PWD/index.html" /tmp/shots        # every screen at desktop and phone sizes, plus save and continue
 ```
 
+## Android app (prototype)
+
+`android/` is a native Android project that wraps this same game, so there is one copy of the game to maintain. At build time it copies `index.html`, `src/` and `assets/` into the APK and swaps Google Fonts for the bundled copies in `android/fonts` (Baloo 2 and Nunito, SIL Open Font License).
+
+- **Offline and private:** the app asks for **no permissions at all**, not even internet. The game is served from inside the APK, and the app refuses to open any other website.
+- **Landscape only**, full screen, with the system bars hidden. On sideways phones the dock folds down to its tabs to give the world more room.
+- **Back button** closes the top screen (a menu, the map, a selection, decorate mode), then goes to the main menu, then leaves the app.
+- **Saves** are kept on the device, written whenever the app goes to the background, and included in Android's backup.
+- Package `com.lilopia.game`, version `0.1.0-prototype`, Android 7.0 (API 24) and newer, targets API 35.
+
+### Install the prototype on a phone
+
+1. Copy `LILOPIA-0.1.0-prototype.apk` to the phone.
+2. Open it and allow installing from that app when Android asks.
+3. Android may warn that the app is from an unknown developer. That is expected for a test build.
+
+### Build it
+
+Needs JDK 17 or newer and the Android SDK (Android Studio installs both).
+
+```sh
+cd android
+echo "sdk.dir=/path/to/Android/sdk" > local.properties   # Android Studio writes this for you
+./gradlew assembleRelease    # app/build/outputs/apk/release/app-release.apk
+```
+
+Without a keystore the release APK is signed with the Android debug key. That is fine for test phones but Google Play will not accept it. For Play, create a keystore and add `android/keystore.properties` with `storeFile`, `storePassword`, `keyAlias` and `keyPassword` (it is git-ignored), then build an App Bundle with `./gradlew bundleRelease`.
+
+### What has been checked
+
+- The APK builds, is signed, requests no permissions and contains every game file.
+- The exact files packed in the APK were run in a phone-sized, touch-enabled browser with the internet blocked: the bundled fonts load, nothing is fetched from outside, and the back-button handler steps back correctly.
+- **Not yet checked on a real Android phone or emulator.** Please try it on a device, especially a low-cost one, as Section 16 asks.
+
 ## How the first build maps to Section 18
 
 | Section 18 requirement | Status | Where |
@@ -77,7 +111,7 @@ These are listed so nothing is claimed that is not there.
 - **Pet breeding, genetics, growth stages and family trees** (Phase 3).
 - **Weather and seasons, vehicles, secret discoveries, story creator and photo mode** (Section 13).
 - **Farming, the farmers market and the seven expansions marked "Coming soon"** (Phases 4 and 7).
-- **Android and iOS release builds** (Phase 8). See the engine note below.
+- **Store-ready Android and any iOS build** (Phase 8). There is an Android prototype APK (see above); a Play Store release needs a signing key, store listing and privacy policy.
 
 ## Engine choice
 
@@ -105,6 +139,7 @@ src/game.js           engine: rendering, drag and drop, interactions, free will,
 src/ui.js             screens and menus
 tests/logic.test.js   automated tests for the rules
 tools/build-artifact.py  builds dist/lilopia.html for the hosted preview
+android/              Android app project (WebView wrapper, icons, bundled fonts)
 ```
 
 ### Adding content

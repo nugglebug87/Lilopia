@@ -37,7 +37,7 @@ function resize() {
   for (const c of [cv, layer]) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); }
   bgKey = '';
 }
-function layout() { floorTop = H * L.SCENES[S.scene].horizon; floorBot = H * .965; unit = Math.min(W / 360, H / 560); }
+function layout() { floorTop = H * L.SCENES[S.scene].horizon; floorBot = H * .965; unit = Math.min(W / 360, H / 500); }
 const proj = (x, z) => { const s = .62 + .38 * z; return { sx: W / 2 + (x - .5) * W * s, sy: lerp(floorTop, floorBot, z), k: unit * (.6 + .5 * z), z }; };
 const unproj = (sx, sy) => { const z = clamp((sy - floorTop) / (floorBot - floorTop), 0, 1); const s = .62 + .38 * z; return { x: clamp((sx - W / 2) / (W * s) + .5, .03, .97), z }; };
 G.size = () => ({ W, H });

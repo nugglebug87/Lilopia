@@ -25,7 +25,7 @@ const P = {
   hand: '<path d="M8 13V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7c-3 0-4.5-1.5-6-4l-2-3.5a1.5 1.5 0 0 1 2.5-1.5L8 15"/>',
   music: '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>', smile: '<circle cx="12" cy="12" r="9"/><path d="M8 14a4.5 4.5 0 0 0 8 0M9 9.5h.01M15 9.5h.01"/>',
   tear: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>', heart: '<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>',
-  down: '<path d="M12 4v13M6 12l6 6 6-6"/>', star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>', dice: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h.01M15 15h.01M15 9h.01M9 15h.01M12 12h.01"/>',
+  down: '<path d="M12 4v13M6 12l6 6 6-6"/>', up: '<path d="M12 20V7M6 12l6-6 6 6"/>', star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>', dice: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h.01M15 15h.01M15 9h.01M9 15h.01M12 12h.01"/>',
   turn: '<path d="M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5"/>', palette: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5 1-1.5 2-1.5h2a4 4 0 0 0 4-4c0-4.5-4-8-9-8z"/><path d="M7.5 11h.01M10 7h.01M15 7.5h.01"/>',
   floor: '<path d="M3 9h18M3 15h18M9 3v18M15 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/>', check: '<path d="m5 12 5 5 9-10"/>',
   sofa: '<path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M3 11h18v6H3zM5 17v2M19 17v2"/>', pot: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h20M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/>',
@@ -113,7 +113,7 @@ function buildBar() {
   $('bagBtn').innerHTML = svg('bag') + '<span class="lbl">Bag</span>';
   $('setBtn').innerHTML = svg('gear');
   $('mapBtn').addEventListener('click', openMap);
-  $('bagBtn').addEventListener('click', () => { if (G.mode !== 'play') G.setMode('play'); setTab('bag'); });
+  $('bagBtn').addEventListener('click', () => { if (G.mode !== 'play') G.setMode('play'); dockTab = 'bag'; folded = false; renderDock(); });
   $('decoBtn').addEventListener('click', () => G.setMode(G.mode === 'play' ? 'decorate' : 'play'));
   $('todBtn').addEventListener('click', () => { const n = { day: 'sunset', sunset: 'night', night: 'day' }[S().tod]; G.setTod(n); syncTod(); toast({ day: 'Good morning!', sunset: 'Golden hour', night: 'Good night. The stars are out.' }[n]); });
   $('setBtn').addEventListener('click', () => openSettings(false));
@@ -151,7 +151,7 @@ G.on('select', ch => showCharChips(ch));
 G.on('selectItem', it => showItemChips(it));
 G.on('tray', it => (it ? showTray(it) : hideTray()));
 G.on('trayRefresh', it => { if (trayItem === it) showTray(it); });
-G.on('mode', () => { syncDeco(); hideChips(); hideTray(); dockTab = G.mode === 'play' ? 'people' : 'furniture'; renderDock(); });
+G.on('mode', () => { syncDeco(); hideChips(); hideTray(); dockTab = G.mode === 'play' ? 'people' : 'furniture'; if (G.mode === 'decorate') folded = false; renderDock(); });
 G.on('history', () => { if (G.mode === 'decorate') syncTools(); });
 G.on('bag', () => { if (dockTab === 'bag') renderDock(); });
 G.on('charChanged', () => { if (dockTab === 'people') renderDock(); if (chipsFor && chipsFor.age) showCharChips(chipsFor); });
@@ -252,14 +252,21 @@ G.dropZone = zoneAt;
 
 /* ---------------- dock ---------------- */
 let dockTab = 'people', decoCat = 'sofas';
-function setTab(t) { dockTab = t; renderDock(); }
+const short = matchMedia('(max-height: 520px)');
+let folded = short.matches;
+short.addEventListener('change', () => { folded = short.matches; renderDock(); });
+/* On short screens tapping the open tab again folds the dock away to give the world more room. */
+function setTab(t) { if (short.matches) folded = dockTab === t ? !folded : false; dockTab = t; renderDock(); }
+function foldBtn(tabs) { const b = el('button', 'fold', svg(folded ? 'up' : 'down')); b.setAttribute('aria-label', folded ? 'Show the drawer' : 'Hide the drawer'); b.setAttribute('aria-expanded', String(!folded)); b.addEventListener('click', () => { folded = !folded; renderDock(); }); tabs.appendChild(b); }
 function tabBtn(id, icon, label) { const b = el('button', null, svg(icon) + label); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(dockTab === id)); b.addEventListener('click', () => setTab(id)); return b; }
 function renderDock() {
   if (!S()) return;
   const tabs = $('dtabs'), drawer = $('drawer'), cats = $('cats'); tabs.innerHTML = ''; drawer.innerHTML = ''; drawer.className = 'drawer'; cats.hidden = true;
+  $('dock').classList.toggle('folded', short.matches && folded);
   if (G.mode === 'play') {
     tabs.append(tabBtn('people', 'people', 'People'), tabBtn('pets', 'paw', 'Pets'), tabBtn('bag', 'bag', 'Bag'));
     const book = el('button', null, svg('book') + 'Book'); book.addEventListener('click', openBook); tabs.appendChild(book);
+    tabs.appendChild(el('span', 'sp')); foldBtn(tabs);
     if (dockTab === 'people') renderPeople(drawer); else if (dockTab === 'pets') renderPets(drawer); else renderBag(drawer);
   } else {
     tabs.append(tabBtn('furniture', 'sofa', 'Furniture'), tabBtn('walls', 'roller', 'Walls'), tabBtn('floors', 'floor', 'Floors'));
@@ -270,7 +277,7 @@ function renderDock() {
       if (reset.dataset.confirm) { G.resetRoom(); delete reset.dataset.confirm; reset.innerHTML = svg('reset') + '<span class="lbl">Reset room</span>'; return; }
       reset.dataset.confirm = '1'; reset.innerHTML = svg('reset') + '<span>Tap again to reset</span>'; setTimeout(() => { if (reset.dataset.confirm) { delete reset.dataset.confirm; reset.innerHTML = svg('reset') + '<span class="lbl">Reset room</span>'; } }, 3000);
     }, 'resetBtn');
-    syncTools();
+    foldBtn(tabs); syncTools();
     if (dockTab === 'furniture') renderCatalog(drawer, cats); else renderSurfaces(drawer, dockTab === 'walls' ? 'wall' : 'floor');
   }
 }
@@ -680,6 +687,18 @@ $('mapcv').addEventListener('click', ev => {
   const target = loc.rooms ? (S().lastRoom || 'home/living') : hit.id;
   closeMap(); if (target !== G.sceneId()) travel(target);
 });
+
+/* Android back button: close the top-most screen. Returns false when there is nothing to close. */
+window.lilopiaBack = () => {
+  if (!$('sheet').hidden) { closeSheet(); return true; }
+  if (!$('map').hidden) { closeMap(); return true; }
+  if (!$('app').hidden && !$('tray').hidden) { G.closeTray(); return true; }
+  if (!$('app').hidden && G.selected) { G.select(null); return true; }
+  if (!$('app').hidden && G.mode === 'decorate') { G.setMode('play'); return true; }
+  if (!$('title').hidden && !$('newConfirm').hidden) { $('newConfirm').hidden = true; $('menu').hidden = false; return true; }
+  if (!$('app').hidden) { G.saveNow(); showTitle(); return true; }
+  return false;
+};
 
 /* ---------------- orientation hint ---------------- */
 function maybeBanner() {
