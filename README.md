@@ -8,7 +8,7 @@ This repository holds the **first playable build** described in Section 18 of th
 
 ## Play it
 
-Open `index.html` in a current browser (Chrome, Edge, Safari or Firefox). There is no build step. The only network request is for Google Fonts, and the game falls back to system fonts without it.
+Open `index.html` in a current browser (Chrome, Edge, Safari or Firefox). There is no build step and nothing is loaded from the internet. To test the installable web app locally, serve the folder, for example `python3 -m http.server`, and open `http://localhost:8000`.
 
 Run the automated tests with Node 18 or newer:
 
@@ -23,9 +23,28 @@ node tests/e2e/interactions.js "$PWD/index.html" /tmp/shots   # 24 checks: cooki
 node tests/e2e/screens.js "$PWD/index.html" /tmp/shots        # every screen at desktop and phone sizes, plus save and continue
 ```
 
+## Web app
+
+LILOPIA is an installable web app (a PWA). It can be added to a phone's home screen or a computer's desktop, opens full screen like an app, and works offline after the first visit.
+
+- `manifest.webmanifest` names the app, sets landscape full screen and lists the icons in `icons/`.
+- `sw.js` stores a copy of every game file so the game opens instantly and offline. **When you change any game file, bump `VERSION` in `sw.js`** so players get the update. A test checks that `sw.js` lists every file the page uses.
+- The fonts are bundled in `fonts/`, so nothing is loaded from other sites.
+- In Chrome, Edge and Android browsers, Settings shows **Install LILOPIA on this device**. On iPhone and iPad, use Share, then Add to Home Screen.
+
+### Publish it free with GitHub Pages
+
+`.github/workflows/pages.yml` runs the tests and publishes the web app whenever `main` changes. One-time setup:
+
+1. Merge this branch into `main`.
+2. On GitHub, open the repo's **Settings > Pages** and set **Source** to **GitHub Actions**.
+3. The game appears at `https://nugglebug87.github.io/Lilopia/` after the workflow finishes (Actions tab).
+
+Any static web host works too: upload `index.html`, `manifest.webmanifest`, `sw.js`, `src/`, `assets/`, `fonts/` and `icons/`. The service worker needs HTTPS (or `localhost`); opening `index.html` straight from disk still works, just without offline install.
+
 ## Android app (prototype)
 
-`android/` is a native Android project that wraps this same game, so there is one copy of the game to maintain. At build time it copies `index.html`, `src/` and `assets/` into the APK and swaps Google Fonts for the bundled copies in `android/fonts` (Baloo 2 and Nunito, SIL Open Font License).
+`android/` is a native Android project that wraps this same game, so there is one copy of the game to maintain. At build time it copies `index.html`, `src/`, `assets/` and `fonts/` into the APK.
 
 - **Offline and private:** the app asks for **no permissions at all**, not even internet. The game is served from inside the APK, and the app refuses to open any other website.
 - **Landscape only**, full screen, with the system bars hidden. On sideways phones the dock folds down to its tabs to give the world more room.
@@ -139,7 +158,12 @@ src/game.js           engine: rendering, drag and drop, interactions, free will,
 src/ui.js             screens and menus
 tests/logic.test.js   automated tests for the rules
 tools/build-artifact.py  builds dist/lilopia.html for the hosted preview
-android/              Android app project (WebView wrapper, icons, bundled fonts)
+android/              Android app project (WebView wrapper and icons)
+fonts/                bundled game fonts (Baloo 2 and Nunito, SIL Open Font License)
+icons/                web app icons
+manifest.webmanifest  web app manifest
+sw.js                 offline service worker
+.github/workflows/pages.yml  publishes the web app to GitHub Pages
 ```
 
 ### Adding content

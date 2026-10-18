@@ -62,6 +62,17 @@ function contentThumb(id, cw = 110, ch = 96) {
 }
 function mapIconThumb(icon, cw = 160, ch = 120) { return thumb(x => L.MAP_ICON[icon](x, 1), 110, 100, cw, ch); }
 
+/* ---------------- installable web app ---------------- */
+/* The service worker keeps the game working offline. It is skipped inside the Android app
+   and the hosted preview, which load the game in their own way. */
+let installPrompt = null;
+const inAndroid = location.host === 'appassets.androidplatform.net';
+if ('serviceWorker' in navigator && window.isSecureContext && !inAndroid && !window.claude) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { /* still playable online */ }));
+}
+addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); installPrompt = ev; });
+addEventListener('appinstalled', () => { installPrompt = null; toast('LILOPIA is installed'); });
+
 /* ---------------- boot: loading, title and main menu ---------------- */
 let started = false;
 async function boot() {
@@ -603,6 +614,11 @@ function openSettings(fromTitle) {
     if (!fromTitle) set.append(el('label', null, 'Free will<small>People do things on their own when you are not directing them</small>'), toggle(st.settings.freeWill, v => G.setSettings({ freeWill: v }), 'Free will'));
     body.appendChild(set);
     const how = el('button', 'btn', svg('star') + 'How to play'); how.addEventListener('click', openHowTo); body.appendChild(how);
+    if (installPrompt) {
+      const inst = el('button', 'btn primary', svg('down') + 'Install LILOPIA on this device');
+      inst.addEventListener('click', async () => { const p = installPrompt; installPrompt = null; p.prompt(); try { await p.userChoice; } catch (e) { /* dismissed */ } inst.remove(); });
+      body.appendChild(inst);
+    }
     if (!fromTitle) {
       body.appendChild(el('p', 'sec', 'Parents'));
       const store = el('button', 'btn', svg('lock') + 'Store and purchases'); store.addEventListener('click', () => openGate(openStore)); body.appendChild(store);

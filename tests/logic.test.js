@@ -114,3 +114,16 @@ test('market prices add up for unpaid items only', () => {
   assert.equal(logic.unpaidTotal([{ type: 'milk', unpaid: true }, { type: 'apple', unpaid: true }, { type: 'bread' }]), 4);
   assert.equal(logic.sellValue('apple'), 3); assert.equal(logic.sellValue('milk'), 0);
 });
+
+test('the offline web app caches every game file', () => {
+  const fs = require('node:fs'), path = require('node:path'), root = path.join(__dirname, '..');
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const cached = JSON.parse(sw.match(/const FILES = (\[[\s\S]*?\]);/)[1].replace(/'/g, '"').replace(/,\s*\]/, ']'));
+  for (const f of cached) if (f !== './') assert.ok(fs.existsSync(path.join(root, f)), `sw.js lists missing ${f}`);
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const used = [...html.matchAll(/(?:src|href)="((?:src|assets|fonts|icons)\/[^"]+|manifest\.webmanifest)"/g)].map(m => m[1]);
+  for (const f of used) assert.ok(cached.includes(f), `index.html uses ${f} but sw.js does not cache it`);
+  for (const f of fs.readdirSync(path.join(root, 'fonts'))) assert.ok(cached.includes('fonts/' + f), `sw.js does not cache fonts/${f}`);
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
+  for (const i of manifest.icons) assert.ok(cached.includes(i.src));
+});
