@@ -35,7 +35,7 @@ android {
         applicationId 'com.lilopia.game'
         minSdk 24
         targetSdk 36
-        versionCode (findProperty('versionCode') ?: '2').toInteger()
+        versionCode = providers.gradleProperty('versionCode').getOrElse('2').toInteger()
         versionName '1.0.0'
         def verifier = providers.gradleProperty('verificationUrl').getOrElse('')
         if (verifier && !(verifier ==~ /https:\/\/[a-zA-Z0-9.-]+(?::443)?\/[^\s"\\]*/)) {

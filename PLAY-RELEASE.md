@@ -12,7 +12,7 @@ Prepared October 21, 2026. Release candidate, not approved for production.
 - Existing multi-density/adaptive launcher icon and Android 12+ splash retained. Store icon: `icons/icon-512.png`.
 - No native `.so` libraries are intentionally included; check the final bundle for accidental native dependencies and run Play pre-launch tests, including 16 KB page-size devices.
 - WebView allows only bundled HTTPS asset-origin resources, disables file/content/geolocation/mixed-content access, and blocks outside navigation. Release WebView debugging is disabled.
-- Manifest requests INTERNET for native purchase verification; Billing Library merges its billing permission. No camera, microphone, location, advertising ID, contacts, storage or notification permissions are requested by application code. Inspect the merged manifest to confirm dependencies.
+- Final merged permissions verified: `INTERNET`, `ACCESS_NETWORK_STATE`, and `com.android.vending.BILLING`. No camera, microphone, location, advertising ID, contacts, storage or notification permissions are present. Google Play Billing includes Google transport/diagnostic dependencies; review their current SDK disclosures as well as app/server data handling before final Data Safety answers.
 - Android backup disabled. Saved world stays on the device; clearing app storage/uninstalling deletes it. Progress is not restored from the website.
 
 ## Build and upload signing

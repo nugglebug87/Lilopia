@@ -26,6 +26,7 @@ public final class PlayStore implements PurchasesUpdatedListener {
     private final Set<String> owned = ConcurrentHashMap.newKeySet();
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private volatile boolean closed;
+    private boolean connecting;
 
     PlayStore(Activity activity, WebView web) {
         this.activity = activity; this.web = web;
@@ -33,11 +34,17 @@ public final class PlayStore implements PurchasesUpdatedListener {
             .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
             .enableAutoServiceReconnection().build();
         // No verifier configured: do not offer a payment that cannot be fulfilled.
-        if (!BuildConfig.VERIFICATION_URL.isEmpty()) client.startConnection(new BillingClientStateListener() {
+        connect();
+    }
+    private void connect() {
+        if (closed || connecting || BuildConfig.VERIFICATION_URL.isEmpty()) return;
+        connecting = true;
+        client.startConnection(new BillingClientStateListener() {
             public void onBillingSetupFinished(BillingResult result) {
+                connecting = false;
                 if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) { catalog(); refresh(); }
             }
-            public void onBillingServiceDisconnected() { details.clear(); notifyWeb("Store disconnected. Please try again."); }
+            public void onBillingServiceDisconnected() { connecting = false; details.clear(); notifyWeb("Store disconnected. Please try again."); }
         });
     }
     @JavascriptInterface public boolean owns(String id) { return owned.contains(id); }
@@ -84,7 +91,9 @@ public final class PlayStore implements PurchasesUpdatedListener {
         });
     }
     void refresh() {
-        if (!client.isReady()) { notifyWeb("Store is unavailable. Connect to Google Play and try again."); return; }
+        if (BuildConfig.VERIFICATION_URL.isEmpty()) return;
+        if (!client.isReady()) { connect(); notifyWeb("Connecting to Google Play. Please try again shortly."); return; }
+        if (details.isEmpty()) catalog();
         client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
             (result, purchases) -> {
                 if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) { notifyWeb("Could not restore purchases. Please try again."); return; }
