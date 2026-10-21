@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- No INTERNET permission: the whole game ships inside the APK and runs offline. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Gameplay stays bundled/offline. Network is used only for purchase verification. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"

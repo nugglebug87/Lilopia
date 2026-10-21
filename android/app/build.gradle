@@ -29,14 +29,19 @@ if (ksFile.exists()) ksFile.withInputStream { ks.load(it) }
 
 android {
     namespace 'com.lilopia.game'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.lilopia.game'
         minSdk 24
-        targetSdk 35
-        versionCode 1
-        versionName '0.1.0-prototype'
+        targetSdk 36
+        versionCode (findProperty('versionCode') ?: '2').toInteger()
+        versionName '1.0.0'
+        def verifier = providers.gradleProperty('verificationUrl').getOrElse('')
+        if (verifier && !(verifier ==~ /https:\/\/[a-zA-Z0-9.-]+(?::443)?\/[^\s"\\]*/)) {
+            throw new GradleException('verificationUrl must be an HTTPS endpoint without quotes or escapes')
+        }
+        buildConfigField 'String', 'VERIFICATION_URL', '"' + verifier + '"'
     }
 
     signingConfigs {
@@ -53,12 +58,12 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            // Without a keystore the release APK is signed with the debug key: fine for
-            // installing the prototype on test phones, not accepted by Google Play.
-            signingConfig ks['storeFile'] ? signingConfigs.release : signingConfigs.debug
+            // No debug fallback. Without an upload key, bundleRelease produces an unsigned AAB.
+            if (ks['storeFile']) signingConfig signingConfigs.release
         }
     }
 
+    buildFeatures { buildConfig true }
     sourceSets {
         main.assets.srcDir gameAssets
     }
@@ -73,4 +78,5 @@ tasks.named('preBuild') { dependsOn copyGame }
 
 dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'com.android.billingclient:billing:8.0.0'
 }

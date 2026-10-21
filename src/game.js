@@ -107,6 +107,11 @@ function act(ch, a, dur = 1.8) { ch._action = a; ch._actionT = T; ch._actionDur 
 
 /* ================= lifecycle ================= */
 G.start = state => {
+  if (globalThis.LilopiaAndroid) {
+    state.owned = {}; // Web save data is never evidence of a Google Play purchase.
+    const location = L.LOCATIONS[state.scene.split('/')[0]];
+    if (location && location.product && !logic.isOwned(state, location.product)) state.scene = 'home/living';
+  }
   S = state; prepAll(); logic.catchUp(S, Date.now()); G.selected = null; G.selItem = null; hist = {};
   L.audio.setVolumes(S.settings.sfx, S.settings.music); L.reducedMotion = !!S.settings.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
   bgKey = ''; emit('scene'); emit('coins'); emit('bag');
@@ -540,7 +545,7 @@ G.rehomePet = p => { for (const c of S.chars) if (c._hold && c._hold.pet === p) 
 G.bringPet = p => { p.scene = S.scene; p.x = rand(.3, .7); p.z = rand(.82, .95); p._use = null; p._born = T; p._heldBy = null; sfx('pet'); save(); };
 G.setTod = tod => { S.tod = tod; bgKey = ''; save(); };
 G.setSettings = s => { Object.assign(S.settings, s); L.audio.setVolumes(S.settings.sfx, S.settings.music); L.reducedMotion = !!S.settings.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches; save(); };
-G.grant = (pid, how) => { S.owned[pid] = how; save(); emit('owned', pid); };
+G.grant = (pid, how) => { if (globalThis.LilopiaAndroid) return false; S.owned[pid] = how; save(); emit('owned', pid); };
 G.revoke = pid => { delete S.owned[pid]; save(); emit('owned', pid); };
 G.findChar = id => S.chars.find(c => c.id === id);
 
