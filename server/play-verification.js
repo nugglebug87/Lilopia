@@ -4,14 +4,8 @@
  * purchases; production must implement all three before exposing an endpoint.
  */
 const PRODUCT_IDS = Object.freeze([
-  'com.lilopia.expansion.pet_paradise',
-  'com.lilopia.expansion.farm_life',
   'com.lilopia.expansion.dream_mansion',
-  'com.lilopia.expansion.magical_gardens',
-  'com.lilopia.expansion.shopping_district',
-  'com.lilopia.expansion.fantasy_kingdom',
   'com.lilopia.expansion.beach_vacation',
-  'com.lilopia.expansion.school_adventures',
   'com.lilopia.expansion.city_life',
   'com.lilopia.expansion.winter_wonderland',
   'com.lilopia.cosmetic.royal',
