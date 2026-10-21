@@ -73,4 +73,7 @@ tasks.named('preBuild') { dependsOn copyGame }
 
 dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
+    // Native Google Play Billing dependency. Checkout remains disabled until
+    // server-side verification and purchase acknowledgement are integrated.
+    implementation 'com.android.billingclient:billing:9.1.0'
 }

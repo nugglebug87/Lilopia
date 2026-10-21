@@ -530,7 +530,7 @@ function openPreview(pid) {
     else if (!p.available) row.appendChild(el('span', 'pill soon', 'Coming soon'));
     body.appendChild(row);
     if (!how && !p.available) body.appendChild(el('p', 'fine', 'This pack is still being built, so it cannot be bought yet. It stays on the map so you can see what is coming.'));
-    if (!how && p.available) body.appendChild(el('p', 'fine', 'Only a grown-up can unlock packs. Purchases in this prototype are simulated and no money is charged.'));
+    if (!how && p.available) body.appendChild(el('p', 'fine', 'Only a grown-up can unlock packs. Google Play purchases are being connected. Paid content is not available for purchase yet.'));
     box.appendChild(body);
     const foot = el('footer'); foot.appendChild(el('span', 'sp'));
     const close = el('button', 'btn', 'Close'); close.addEventListener('click', closeSheet); foot.appendChild(close);
@@ -566,18 +566,18 @@ function openPurchase(pid) {
     box.classList.add('narrow'); sheetHead(box, 'Confirm purchase', 'Parent purchase screen');
     const body = el('div', 'body');
     body.appendChild(el('div', 'gateq', `${esc(p.name)}: ${esc(p.price)}`));
-    body.appendChild(el('p', 'fine', `Store product ${esc(p.productId)}. This prototype simulates the store, so no money is charged. A released game would show the Google Play or App Store payment sheet here, then verify the purchase.`));
+    body.appendChild(el('p', 'fine', `Store product ${esc(p.productId)}. Purchases are not enabled yet. Paid content will unlock only after Google Play verifies payment.`));
     box.appendChild(body);
     const foot = el('footer'); foot.appendChild(el('span', 'sp'));
     const cancel = el('button', 'btn', 'Cancel'); cancel.addEventListener('click', closeSheet);
-    const buy = el('button', 'btn pink', svg('check') + 'Buy (simulated)');
-    buy.addEventListener('click', () => { G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); closeSheet(); if (stack.length) drawSheet(); renderDock(); });
+    const buy = el('button', 'btn pink', 'Coming soon');
+    buy.disabled = true;
     foot.append(cancel, buy); box.appendChild(foot);
   });
 }
 function openStore() {
   pushSheet(box => {
-    sheetHead(box, 'Parents: store and purchases', 'Every expansion is $5.99. Purchases are simulated in this prototype.');
+    sheetHead(box, 'Parents: store and purchases', 'Every expansion is $5.99. Google Play checkout is not enabled yet.');
     const body = el('div', 'body');
     for (const [pid, p] of Object.entries(L.PRODUCTS)) {
       const row = el('div', 'prow'), how = S().owned[pid];
@@ -586,7 +586,7 @@ function openStore() {
       const acts = el('div', 'acts');
       if (how) acts.appendChild(el('span', 'pill ' + (how === 'dev' ? 'dev' : 'owned'), how === 'dev' ? 'Dev flag' : 'Owned'));
       else if (!p.available) acts.appendChild(el('span', 'pill soon', 'Coming soon'));
-      else { const b = el('button', 'btn primary', 'Buy (simulated)'); b.addEventListener('click', () => { G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); drawSheet(); renderDock(); }); acts.appendChild(b); }
+      else { const b = el('button', 'btn', 'Not yet available'); b.disabled = true; acts.appendChild(b); }
       const info = el('button', 'btn', 'Details'); info.addEventListener('click', () => openPreview(pid)); acts.appendChild(info);
       row.appendChild(acts); body.appendChild(row);
     }
@@ -594,7 +594,7 @@ function openStore() {
     box.appendChild(body);
     const foot = el('footer');
     const restore = el('button', 'btn', 'Restore purchases');
-    restore.addEventListener('click', () => { const n = Object.values(S().owned).filter(v => v === 'simulated').length; G.saveNow(); toast(`Restored ${n} purchase${n === 1 ? '' : 's'} saved on this device`); });
+    restore.addEventListener('click', () => toast('Google Play purchase restoration is not connected yet. No purchases were restored.'));
     foot.append(restore, el('span', 'sp'));
     const done = el('button', 'btn primary', 'Done'); done.addEventListener('click', closeSheet); foot.appendChild(done);
     box.appendChild(foot);
