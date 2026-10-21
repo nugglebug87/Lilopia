@@ -82,6 +82,10 @@ public class MainActivity extends Activity {
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         if (web.getUrl() == null) web.loadUrl(START_URL);
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleGameBack);
+        }
         hideSystemBars();
     }
 
@@ -89,6 +93,10 @@ public class MainActivity extends Activity {
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
+        handleGameBack();
+    }
+
+    private void handleGameBack() {
         web.evaluateJavascript("(window.lilopiaBack && window.lilopiaBack()) ? 1 : 0", result -> {
             if (!"1".equals(result)) moveTaskToBack(true);
         });

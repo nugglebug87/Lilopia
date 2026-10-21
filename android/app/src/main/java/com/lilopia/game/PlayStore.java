@@ -47,7 +47,8 @@ public final class PlayStore implements PurchasesUpdatedListener {
             ? d.getOneTimePurchaseOfferDetails().getFormattedPrice() : "";
     }
     @JavascriptInterface public boolean available(String id) {
-        return !closed && client.isReady() && details.containsKey(id) && !BuildConfig.VERIFICATION_URL.isEmpty();
+        ProductDetails d = details.get(id);
+        return !closed && client.isReady() && d != null && d.getOneTimePurchaseOfferDetails() != null && !BuildConfig.VERIFICATION_URL.isEmpty();
     }
     @JavascriptInterface public void buy(String id) {
         if (!PRODUCTS.contains(id) || !available(id)) { notifyWeb("Purchases are unavailable. No payment was started."); return; }
@@ -60,8 +61,10 @@ public final class PlayStore implements PurchasesUpdatedListener {
                     if (!String.valueOf(a * b).equals(answer.getText().toString().trim())) return;
                     ProductDetails d = details.get(id);
                     if (d == null || !client.isReady()) { notifyWeb("Store unavailable. Please try again."); return; }
-                    BillingFlowParams.ProductDetailsParams product = BillingFlowParams.ProductDetailsParams.newBuilder()
-                        .setProductDetails(d).build();
+                    BillingFlowParams.ProductDetailsParams.Builder selected = BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(d);
+                    ProductDetails.OneTimePurchaseOfferDetails offer = d.getOneTimePurchaseOfferDetails();
+                    if (offer != null && offer.getOfferToken() != null) selected.setOfferToken(offer.getOfferToken());
+                    BillingFlowParams.ProductDetailsParams product = selected.build();
                     BillingResult result = client.launchBillingFlow(activity, BillingFlowParams.newBuilder()
                         .setProductDetailsParamsList(Collections.singletonList(product)).build());
                     if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) notifyWeb("Payment could not start. Please try again.");
