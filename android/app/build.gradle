@@ -18,7 +18,7 @@ def copyGame = tasks.register('copyGame', Sync) {
             return inPwa ? null : line
         }
     }
-    from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**' }
+    from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**', 'privacy-policy.html', 'terms-of-use.html' }
     into gameAssets.map { it.dir('game') }
 }
 
@@ -36,7 +36,7 @@ android {
         minSdk 24
         targetSdk 35
         versionCode 1
-        versionName '0.1.0-prototype'
+        versionName '0.1.0'
     }
 
     signingConfigs {
@@ -53,9 +53,8 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            // Without a keystore the release APK is signed with the debug key: fine for
-            // installing the prototype on test phones, not accepted by Google Play.
-            signingConfig ks['storeFile'] ? signingConfigs.release : signingConfigs.debug
+            // Release builds without an upload key remain unsigned, never debug-signed.
+            if (ks['storeFile']) signingConfig signingConfigs.release
         }
     }
 
