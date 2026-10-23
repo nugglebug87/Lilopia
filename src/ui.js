@@ -628,6 +628,15 @@ function openSettings(fromTitle) {
       for (const [pid, p] of Object.entries(L.PRODUCTS)) { if (!p.available) continue; dev.append(el('label', null, esc(p.name)), toggle(!!S().owned[pid], v => { if (v) G.grant(pid, 'dev'); else G.revoke(pid); renderDock(); }, `${p.name} development flag`)); }
       body.appendChild(dev);
     }
+    const legal = el('div', 'set');
+    for (const [label, path] of [['Privacy Policy', 'privacy-policy.html'], ['Terms of Use', 'terms-of-use.html']]) {
+      const link = el('a', 'btn', label);
+      link.href = new URL(path, document.baseURI).href;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      legal.appendChild(link);
+    }
+    body.appendChild(el('p', 'sec', 'Legal')); body.appendChild(legal);
     body.appendChild(el('p', 'fine', 'LILOPIA has no chat, no ads, no accounts and no location sharing, and collects no personal information. Your world saves automatically on this device.'));
     box.appendChild(body);
     const foot = el('footer');
