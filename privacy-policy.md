@@ -38,6 +38,6 @@ We may update this policy when game features, service providers, or legal requir
 
 ## Contact
 
-For privacy questions or requests, contact the publisher through the contact method listed on LILOPIA's Google Play Store developer page. **Before publishing to Google Play, the developer must add a working privacy contact email here.**
+For privacy questions or requests, email **Unfilteredinink@gmail.com**.
 
 **Publisher:** Unfiltered Ink
