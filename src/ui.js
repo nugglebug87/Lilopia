@@ -30,7 +30,7 @@ const P = {
   floor: '<path d="M3 9h18M3 15h18M9 3v18M15 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/>', check: '<path d="m5 12 5 5 9-10"/>',
   sofa: '<path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M3 11h18v6H3zM5 17v2M19 17v2"/>', pot: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h20M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/>',
   bed: '<path d="M3 18V7M3 13h18v5M21 18v-5M6 13v-2a2 2 0 0 1 2-2h3v4"/>', bath: '<path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5zM6 12V5a2 2 0 0 1 4 0"/>', sprout: '<path d="M12 21v-9M12 12C12 7 8 5 4 5c0 4 3 7 8 7zM12 10c0-4 3-6 7-6 0 4-3 6-7 6z"/>',
-  close: '<path d="M6 6l12 12M18 6 6 18"/>', home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>', coinplus: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>', zin: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8M10.5 7.5v6M7.5 10.5h6"/>', zout: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8M7.5 10.5h6"/>', fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>', coinplus: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
 };
 const svg = (n, extra = '') => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${P[n] || ''}</svg>`;
 
@@ -128,6 +128,11 @@ function buildBar() {
   $('decoBtn').addEventListener('click', () => G.setMode(G.mode === 'play' ? 'decorate' : 'play'));
   $('todBtn').addEventListener('click', () => { const n = { day: 'sunset', sunset: 'night', night: 'day' }[S().tod]; G.setTod(n); syncTod(); toast({ day: 'Good morning!', sunset: 'Golden hour', night: 'Good night. The stars are out.' }[n]); });
   $('setBtn').addEventListener('click', () => openSettings(false));
+  $('zoomIn').innerHTML = svg('zin'); $('zoomOut').innerHTML = svg('zout'); $('zoomFit').innerHTML = svg('fit');
+  $('zoomIn').addEventListener('click', () => { G.zoomBy(1.4); sfx('click'); });
+  $('zoomOut').addEventListener('click', () => { G.zoomBy(1 / 1.4); sfx('click'); });
+  $('zoomFit').addEventListener('click', () => { G.zoomReset(); sfx('click'); });
+  syncZoom(1);
   window.claude?.hot?.snapshot?.(() => ({ state: G.snapshot() }));
 }
 function syncTod() { const t = S().tod; $('todBtn').innerHTML = svg({ day: 'sun', sunset: 'sunset', night: 'moon' }[t]) + `<span class="lbl">${{ day: 'Day', sunset: 'Sunset', night: 'Night' }[t]}</span>`; }
@@ -169,6 +174,8 @@ G.on('charChanged', () => { if (dockTab === 'people') renderDock(); if (chipsFor
 G.on('locked', pid => openPreview(pid));
 G.on('frame', () => { placeChips(); placeTray(); });
 G.on('owned', () => { renderDock(); });
+G.on('zoom', z => syncZoom(z));
+function syncZoom(z) { $('zoomIn').disabled = z >= G.ZOOM_MAX - .01; $('zoomOut').disabled = z <= 1.01; $('zoomFit').hidden = z <= 1.01; }
 
 let toastTimer = 0;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400); }
@@ -365,6 +372,10 @@ function closeAll() { stack.length = 0; $('sheet').hidden = true; $('sheetBox').
 function drawSheet() { const box = $('sheetBox'); box.innerHTML = ''; box.className = 'sheet'; $('sheet').hidden = false; stack[stack.length - 1](box); const f = box.querySelector('.close'); if (f) f.focus({ preventScroll: true }); }
 function sheetHead(box, title, sub) { const h = el('header'); const t = el('div'); t.style.flex = '1'; t.style.minWidth = '0'; t.appendChild(el('h2', null, esc(title))); if (sub) t.appendChild(el('p', null, esc(sub))); h.appendChild(t); const x = el('button', 'close', '&times;'); x.setAttribute('aria-label', 'Close'); x.addEventListener('click', closeSheet); h.appendChild(x); box.appendChild(h); }
 $('sheet').addEventListener('pointerdown', ev => { if (ev.target === $('sheet')) closeSheet(); });
+window.addEventListener('keydown', ev => {
+  if ($('app').hidden || !$('sheet').hidden || !$('map').hidden || ev.target.closest('input')) return;
+  if (ev.key === '+' || ev.key === '=') G.zoomBy(1.4); else if (ev.key === '-') G.zoomBy(1 / 1.4); else if (ev.key === '0') G.zoomReset();
+});
 window.addEventListener('keydown', ev => { if (ev.key !== 'Escape') return; if (!$('sheet').hidden) closeSheet(); else if (!$('map').hidden) closeMap(); else if (G.selected) G.select(null); });
 function chips(values, cur, onPick, field) {
   const w = el('div', 'ch');

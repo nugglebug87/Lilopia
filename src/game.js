@@ -27,7 +27,8 @@ G.mount = (canvas, stage) => {
   cv = canvas; stageEl = stage; ctx = cv.getContext('2d'); layer = document.createElement('canvas'); lctx = layer.getContext('2d');
   new ResizeObserver(resize).observe(stage); resize();
   cv.addEventListener('pointerdown', onDown); cv.addEventListener('pointermove', onMove); cv.addEventListener('pointerup', onUp);
-  cv.addEventListener('pointercancel', () => { pending = null; if (drag && !drag.ext) cancelDrag(); });
+  cv.addEventListener('pointercancel', ev => { fingers.delete(ev.pointerId); pinch = null; panning = null; pending = null; if (drag && !drag.ext) cancelDrag(); });
+  cv.addEventListener('wheel', ev => { ev.preventDefault(); const pt = local(ev); zoomAt(view.z * Math.exp(-ev.deltaY * (ev.ctrlKey ? .01 : .0015)), pt.sx, pt.sy, false); }, { passive: false });
   window.addEventListener('pointermove', ev => { if (drag && drag.ext) moveDrag(local(ev), ev); });
   window.addEventListener('pointerup', ev => { if (drag && drag.ext) endDrag(ev); });
 };
@@ -36,8 +37,46 @@ function resize() {
   W = Math.max(1, r.width); H = Math.max(1, r.height);
   for (const c of [cv, layer]) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); }
   bgKey = '';
+  setViewNow(view.z, view.x, view.y);
 }
 function layout() { floorTop = H * L.SCENES[S.scene].horizon; floorBot = H * .965; unit = Math.min(W / 360, H / 500); }
+
+/* ================= camera zoom =================
+   The engine works in "scene pixels" (the stage at 1x). The view scales and pans that
+   picture: screen = scene * z - (x, y). Gestures move the view directly; buttons set a
+   target that the view eases toward. */
+const ZMAX = 2.5;
+const view = { z: 1, x: 0, y: 0, tz: 1, tx: 0, ty: 0, changedAt: 0 };
+let bgView = { z: 1, x: 0, y: 0 }, lastZoomEmit = 1;
+const toScene = (sx, sy) => ({ x: (sx + view.x) / view.z, y: (sy + view.y) / view.z });
+const toScreen = (x, y) => ({ x: x * view.z - view.x, y: y * view.z - view.y });
+const viewMatrix = c => c.setTransform(DPR * view.z, 0, 0, DPR * view.z, -view.x * DPR, -view.y * DPR);
+function clampView(z, x, y) { z = clamp(z, 1, ZMAX); return { z, x: clamp(x, 0, W * z - W), y: clamp(y, 0, H * z - H) }; }
+/* Zoom to z keeping the scene point under screen point (sx, sy) still. */
+function zoomAt(z, sx, sy, animate) {
+  const p = toScene(sx, sy), v = clampView(z, p.x * z - sx, p.y * z - sy);
+  view.tz = v.z; view.tx = v.x; view.ty = v.y;
+  if (!animate || L.reducedMotion) { view.z = v.z; view.x = v.x; view.y = v.y; view.changedAt = T; }
+  zoomChanged();
+}
+function setViewNow(z, x, y) { const v = clampView(z, x, y); Object.assign(view, { z: v.z, x: v.x, y: v.y, tz: v.z, tx: v.x, ty: v.y, changedAt: T }); zoomChanged(); }
+function zoomChanged() { if (Math.abs(view.tz - lastZoomEmit) > .005) { lastZoomEmit = view.tz; emit('zoom', view.tz); } }
+function easeView(dt) {
+  if (view.z === view.tz && view.x === view.tx && view.y === view.ty) return;
+  const k = 1 - Math.exp(-dt * 14);
+  view.z += (view.tz - view.z) * k; view.x += (view.tx - view.x) * k; view.y += (view.ty - view.y) * k;
+  if (Math.abs(view.tz - view.z) < .002 && Math.abs(view.tx - view.x) < .3 && Math.abs(view.ty - view.y) < .3) { view.z = view.tz; view.x = view.tx; view.y = view.ty; }
+  view.changedAt = T;
+}
+G.zoomLevel = () => view.tz;
+G.ZOOM_MAX = ZMAX;
+/* Buttons zoom toward the selected person when there is one, otherwise the middle of the stage. */
+G.zoomBy = f => {
+  let c = { x: W / 2, y: H / 2 };
+  if (G.selected && G.selected.scene === S.scene && !G.selected._heldBy) { const b = boxOf(G.selected); c = toScreen(b.x + b.w / 2, b.y + b.h / 2); }
+  zoomAt(view.tz * f, c.x, c.y, true);
+};
+G.zoomReset = () => { view.tz = 1; view.tx = 0; view.ty = 0; if (L.reducedMotion) setViewNow(1, 0, 0); zoomChanged(); };
 const proj = (x, z) => { const s = .62 + .38 * z; return { sx: W / 2 + (x - .5) * W * s, sy: lerp(floorTop, floorBot, z), k: unit * (.6 + .5 * z), z }; };
 const unproj = (sx, sy) => { const z = clamp((sy - floorTop) / (floorBot - floorTop), 0, 1); const s = .62 + .38 * z; return { x: clamp((sx - W / 2) / (W * s) + .5, .03, .97), z }; };
 G.size = () => ({ W, H });
@@ -93,7 +132,7 @@ function boxOf(e) {
   const dm = L.petDims(e); return { x: p.sx - dm.w * p.k / 2, y: p.sy - dm.h * p.k - lift, w: dm.w * p.k, h: dm.h * p.k, p };
 }
 /* Top centre of an entity on screen, for floating menus. */
-G.anchorOf = e => { const b = boxOf(e); return { x: b.x + b.w / 2, y: b.y, bottom: b.y + b.h }; };
+G.anchorOf = e => { const b = boxOf(e), top = toScreen(b.x + b.w / 2, b.y), bot = toScreen(b.x, b.y + b.h); return { x: top.x, y: top.y, bottom: bot.y }; };
 
 /* ================= effects ================= */
 const particles = [];
@@ -109,7 +148,7 @@ function act(ch, a, dur = 1.8) { ch._action = a; ch._actionT = T; ch._actionDur 
 G.start = state => {
   S = state; prepAll(); logic.catchUp(S, Date.now()); G.selected = null; G.selItem = null; hist = {};
   L.audio.setVolumes(S.settings.sfx, S.settings.music); L.reducedMotion = !!S.settings.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  bgKey = ''; emit('scene'); emit('coins'); emit('bag');
+  bgKey = ''; setViewNow(1, 0, 0); emit('scene'); emit('coins'); emit('bag');
   if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
 };
 let running = false, last = 0, saveTimer = 0, lastAutosave = 0;
@@ -125,7 +164,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) G.sav
 
 function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
-  try { if (S) { update(dt); render(dt); emit('frame'); } } catch (err) { console.error(err); }
+  try { if (S) { easeView(dt); edgePan(dt); update(dt); render(dt); emit('frame'); } } catch (err) { console.error(err); }
   if (S && T - lastAutosave > 10) { lastAutosave = T; G.saveNow(); }
   requestAnimationFrame(frame);
 }
@@ -409,7 +448,7 @@ function pay(list, done) {
   if (S.coins < total) { toast(`You need ${total - S.coins} more Lilo Coins. Sell garden produce here to earn more.`); sfx('boop'); return; }
   S.coins -= total; done(); sfx('coin'); emit('coins'); emit('bag'); toast(`Paid ${total} Lilo Coins. Your shopping is in your bag.`);
 }
-function addCoins(n) { S.coins += n; sfx('coin'); emit('coins'); fx('coin', W - 60, 20, Math.min(6, n), .5); }
+function addCoins(n) { S.coins += n; sfx('coin'); emit('coins'); const p = toScene(W - 60, 20); fx('coin', p.x, p.y, Math.min(6, n), .5); }
 G.addCoins = addCoins;
 
 /* ---- cooking ---- */
@@ -523,7 +562,7 @@ G.goto = sceneId => {
   const ch = G.selected;
   G.closeTray(); G.selItem = null; emit('selectItem', null);
   if (ch && ch.scene !== sceneId) { standUp(ch); ch.scene = sceneId; ch.x = .5; ch.z = .85; ch._born = T; carryAlong(ch); toast(`${ch.name} came along`); }
-  S.scene = sceneId; bgKey = ''; particles.length = 0; sfx('whoosh'); emit('scene'); save(); return true;
+  S.scene = sceneId; bgKey = ''; particles.length = 0; setViewNow(1, 0, 0); sfx('whoosh'); emit('scene'); save(); return true;
 };
 function carryAlong(ch) { if (ch._hold) { const t = ch._hold.kind === 'char' ? ch._hold.ch : ch._hold.pet; if (t) t.scene = ch.scene; } }
 G.bringHere = ch => { if (ch.scene === S.scene) { G.select(ch); return; } standUp(ch); ch.scene = S.scene; ch.x = rand(.3, .7); ch.z = rand(.78, .92); ch._born = T; ch._target = null; carryAlong(ch); sfx('pop'); G.select(ch); save(); };
@@ -547,7 +586,10 @@ G.findChar = id => S.chars.find(c => c.id === id);
 /* ================= input ================= */
 let pending = null, drag = null, lastDrop = null;
 G.dropZone = () => null;  // set by the UI: (clientX, clientY) => { zone, room } | null
-function local(ev) { const r = cv.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top, inside: ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom }; }
+function local(ev) {
+  const r = cv.getBoundingClientRect(), sx = ev.clientX - r.left, sy = ev.clientY - r.top, p = toScene(sx, sy);
+  return { x: p.x, y: p.y, sx, sy, inside: ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom };
+}
 function entityList() {
   const list = [];
   for (const it of items()) list.push({ e: it, z: def(it.type).floor ? -1 : itemPos(it).z });
@@ -575,25 +617,51 @@ function hitTest(x, y, exclude, lenient) {
   if (lenient && inBox.length) return inBox.sort((a, b) => a.b.w * a.b.h - b.b.w * b.b.h)[0].e;
   return null;
 }
-G.hitAt = (x, y) => hitTest(x, y);
+G.hitAt = (sx, sy) => { const p = toScene(sx, sy); return hitTest(p.x, p.y); };
 function nearUsable(ch) {
   const s = proj(ch.x, ch.z); let best = null, bd = Infinity;
   for (const it of items()) { const d = def(it.type); if (!d.use && !d.plot) continue; const p = itemPos(it), dx = Math.abs(s.sx - p.sx), dy = Math.abs(s.sy - p.sy); if (dx < d.w * p.k * .55 && dy < 50 * p.k && dx + dy < bd) { bd = dx + dy; best = it; } }
   return best;
 }
+/* Two fingers pinch to zoom and move the view. One finger dragging empty floor pans
+   while zoomed in; one finger on a person or thing drags it, as before. */
+const fingers = new Map();
+let pinch = null, panning = null, gestureDone = false;
 function onDown(ev) {
   L.audio.start();
-  const pt = local(ev); pending = { e: hitTest(pt.x, pt.y), x: pt.x, y: pt.y };
   try { cv.setPointerCapture(ev.pointerId); } catch (_) { /* older browsers */ }
+  const pt = local(ev); fingers.set(ev.pointerId, pt);
+  if (fingers.size === 2 && !drag) {
+    const [a, b] = [...fingers.values()];
+    pinch = { d0: Math.max(10, Math.hypot(a.sx - b.sx, a.sy - b.sy)), m0: { x: (a.sx + b.sx) / 2, y: (a.sy + b.sy) / 2 }, z0: view.z, x0: view.x, y0: view.y };
+    pending = null; panning = null; return;
+  }
+  if (fingers.size > 1) return;
+  gestureDone = false;
+  pending = { e: hitTest(pt.x, pt.y), x: pt.x, y: pt.y, sx: pt.sx, sy: pt.sy };
 }
 function onMove(ev) {
   const pt = local(ev);
-  if (drag && !drag.ext) { moveDrag(pt, ev); return; }
-  if (pending && pending.e && Math.hypot(pt.x - pending.x, pt.y - pending.y) > 7) { beginDrag(pending.e, { x: pending.x, y: pending.y }); pending = null; moveDrag(pt, ev); }
-  cv.style.cursor = drag ? 'grabbing' : hitTest(pt.x, pt.y) ? 'grab' : 'pointer';
+  if (fingers.has(ev.pointerId)) fingers.set(ev.pointerId, pt);
+  if (pinch && fingers.size >= 2) {
+    const [a, b] = [...fingers.values()], d = Math.hypot(a.sx - b.sx, a.sy - b.sy), m = { x: (a.sx + b.sx) / 2, y: (a.sy + b.sy) / 2 };
+    const z = clamp(pinch.z0 * d / pinch.d0, 1, ZMAX), px = (pinch.m0.x + pinch.x0) / pinch.z0, py = (pinch.m0.y + pinch.y0) / pinch.z0;
+    setViewNow(z, px * z - m.x, py * z - m.y); return;
+  }
+  if (panning) { setViewNow(view.z, panning.vx - (pt.sx - panning.sx), panning.vy - (pt.sy - panning.sy)); return; }
+  if (drag && !drag.ext) { if (drag.pid === ev.pointerId) moveDrag(pt, ev); return; }
+  if (pending && Math.hypot(pt.sx - pending.sx, pt.sy - pending.sy) > 7) {
+    if (pending.e) { beginDrag(pending.e, { x: pending.x, y: pending.y }); drag.pid = ev.pointerId; pending = null; moveDrag(pt, ev); }
+    else if (view.z > 1.01) { panning = { sx: pending.sx, sy: pending.sy, vx: view.x, vy: view.y }; pending = null; cv.style.cursor = 'grabbing'; return; }
+  }
+  if (!fingers.size || ev.pointerType === 'mouse') cv.style.cursor = drag || panning ? 'grabbing' : hitTest(pt.x, pt.y) ? 'grab' : view.z > 1.01 ? 'move' : 'pointer';
 }
 function onUp(ev) {
-  if (drag && !drag.ext) { endDrag(ev); return; }
+  fingers.delete(ev.pointerId);
+  if (pinch) { if (fingers.size < 2) { pinch = null; gestureDone = fingers.size > 0; } return; }
+  if (gestureDone) { if (!fingers.size) gestureDone = false; return; }
+  if (panning) { panning = null; return; }
+  if (drag && !drag.ext) { if (drag.pid === ev.pointerId) endDrag(ev); return; }
   if (!pending) return; const { e, x, y } = pending; pending = null;
   emit('tap');
   if (!e) {
@@ -621,9 +689,18 @@ function beginDrag(e, pt, ext) {
 }
 G.beginExternal = (e, clientPt) => { const pt = local(clientPt); beginDrag(e, pt, true); moveDrag(pt, clientPt); };
 function moveDrag(pt, ev) {
+  if (pt.sx != null) { drag.sx = pt.sx; drag.sy = pt.sy; }
   const { e } = drag, w = unproj(pt.x - drag.offX, pt.y - drag.offY);
   e.x = w.x; e.z = w.z; e._tilt = clamp((e._tilt || 0) + (pt.x - drag.lastX) * .006, -.35, .35); drag.lastX = pt.x;
   emit('dragmove', ev);
+}
+function edgePan(dt) {
+  if (!drag || view.z <= 1.01 || drag.sx == null) return;
+  const m = 48, sp = 520 * dt;
+  const dx = drag.sx < m ? -sp : drag.sx > W - m ? sp : 0, dy = drag.sy < m ? -sp : drag.sy > H - m ? sp : 0;
+  if (!dx && !dy) return;
+  setViewNow(view.z, view.x + dx, view.y + dy);
+  const p = toScene(drag.sx, drag.sy); moveDrag({ x: p.x, y: p.y, sx: drag.sx, sy: drag.sy }, null);
 }
 function cancelDrag() { if (drag) { drag.e._dragging = false; drag = null; emit('dragend'); } }
 function endDrag(ev) {
@@ -664,10 +741,18 @@ function moveToScene(e, sceneId) {
 function render(dt) {
   layout();
   env = env || {}; Object.assign(env, { W, H, ft: floorTop, fb: floorBot, tod: S.tod, sceneId: S.scene, sc: scene(), def: L.SCENES[S.scene] });
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#cfe9ff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  // The background is cached at the current zoom. While the view is moving the cached
+  // picture is stretched; it is redrawn sharp once the view settles.
   const key = [S.scene, S.tod, W, H, DPR, scene().wall, scene().floor].join('|');
-  if (key !== bgKey) { bgKey = key; bg = bg || document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height; const c = bg.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); L.drawSceneBackground(c, env); }
-  ctx.drawImage(bg, 0, 0, W, H);
+  const viewMoved = bgView.z !== view.z || bgView.x !== view.x || bgView.y !== view.y;
+  if (key !== bgKey || (viewMoved && T - view.changedAt > .12)) {
+    bgKey = key; bg = bg || document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
+    const c = bg.getContext('2d'); viewMatrix(c); L.drawSceneBackground(c, env); bgView = { z: view.z, x: view.x, y: view.y };
+  }
+  const s = view.z / bgView.z;
+  ctx.drawImage(bg, (bgView.x * s - view.x) * DPR, (bgView.y * s - view.y) * DPR, bg.width * s, bg.height * s);
+  viewMatrix(ctx);
   L.drawSceneAmbient(ctx, env, T, dt);
   const list = entityList();
   list.sort((a, b) => (a.e._dragging ? 9 : a.z) - (b.e._dragging ? 9 : b.z));
@@ -681,11 +766,13 @@ function render(dt) {
   }
   if (G.selected && G.selected.scene === S.scene) ring(G.selected, '138,92,246');
   if (G.selItem && items().includes(G.selItem)) ring(G.selItem, '255,95,168');
-  lctx.setTransform(DPR, 0, 0, DPR, 0, 0); lctx.clearRect(0, 0, W, H);
+  lctx.setTransform(1, 0, 0, 1, 0, 0); lctx.clearRect(0, 0, layer.width, layer.height); viewMatrix(lctx);
   for (const { e } of list) if (!(e.parent && byId(e.parent))) drawEntity(lctx, e);
-  if (L.TINT[S.tod]) { lctx.globalCompositeOperation = 'source-atop'; lctx.fillStyle = L.TINT[S.tod]; lctx.fillRect(0, 0, W, H); lctx.globalCompositeOperation = 'source-over'; }
-  ctx.drawImage(layer, 0, 0, W, H);
-  lights(); drawParticles();
+  lctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (L.TINT[S.tod]) { lctx.globalCompositeOperation = 'source-atop'; lctx.fillStyle = L.TINT[S.tod]; lctx.fillRect(0, 0, layer.width, layer.height); lctx.globalCompositeOperation = 'source-over'; }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(layer, 0, 0);
+  viewMatrix(ctx); lights(); drawParticles();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   const v = ctx.createRadialGradient(W / 2, H * .55, Math.min(W, H) * .45, W / 2, H * .55, Math.max(W, H) * .8); v.addColorStop(0, 'rgba(40,20,90,0)'); v.addColorStop(1, 'rgba(40,20,90,.2)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
 }
 function ring(e, rgb) { const p = posOf(e), b = boxOf(e); ctx.save(); ctx.translate(p.sx, p.sy); ctx.scale(1, .32); ctx.lineWidth = 4 * p.k / .32 * .3; ctx.strokeStyle = `rgba(${rgb},${.55 + Math.sin(T * 5) * .2})`; ctx.beginPath(); ctx.arc(0, 0, Math.max(30, b.w * .55 / p.k) * p.k, 0, TAU); ctx.stroke(); ctx.restore(); }
@@ -710,7 +797,7 @@ function overlay(c, ch, p) {
   const over = L.OBJ_OVER[p.item.type]; if (!over) return;
   const d = p.def, seat = d.seats[ch._use.seat] || d.seats[0], col = d.colors[(p.item.ci || 0) % d.colors.length];
   const dx = p.pose === 'sleep' ? seat[0] + L.charHeadDist(ch) : seat[0];
-  c.setTransform(1, 0, 0, 1, 0, 0); c.scale(DPR, DPR); const ip = itemPos(p.item); c.translate(ip.sx, ip.sy - p.item._lift * ip.k); c.scale(ip.k, ip.k); if (p.item.flip) c.scale(-1, 1);
+  viewMatrix(c); const ip = itemPos(p.item); c.translate(ip.sx, ip.sy - p.item._lift * ip.k); c.scale(ip.k, ip.k); if (p.item.flip) c.scale(-1, 1);
   over(c, T, p.item, col);
 }
 function lights() {
