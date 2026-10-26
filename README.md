@@ -90,7 +90,7 @@ Without a keystore the release APK is signed with the Android debug key. That is
 | Character dragging and positioning | Done | Spring-based lift, tilt and landing |
 | Basic character animations | Done | Walk, sit, sleep, eat, drink, dance, laugh, cry, wave, hug, jump, carry, hold a baby, hold a pet, cook, garden, shop, swing, slide, bathe, play piano |
 | Twenty functional interactive objects | Done (over 60) | Fridge, cabinets, wardrobe, toy box, seed box and shop shelves open; stove, toaster and blender cook; lamps, TV and sinks switch; beds, sofas, chairs, swings, slide and bathtub are usable; plots grow; checkout sells and buys |
-| Basic pet adoption | Done | Dogs, cats, rabbits, hamsters, birds and fish, with breed, fur color, pattern, fur length, ears, eye color, size, accessory, personality and name. Feed, pet, hold and nap |
+| Basic pet adoption | Done | Dogs, cats, rabbits, hamsters, birds, fish, tigers, kangaroos, monkeys and elephants, with breed, fur color, pattern, fur length, ears, eye color, size, accessory, personality and name. Feed, pet, hold and nap |
 | Small garden with plant growth | Done | Seed, sprout, young, mature, harvest. Watering doubles growth for a while. Plants never die and keep growing for up to 20 minutes while the game is closed |
 | Functional save/load | Done | Autosaves on every change, every 10 seconds and when the tab is hidden. Continue from the main menu |
 | Visible locked premium buildings | Done | All ten $5.99 expansions are on the map with a lock |
@@ -102,6 +102,7 @@ Without a keystore the release APK is signed with the Android debug key. That is
 
 - **Interactions are data-driven** (Section 5): `L.DROP_RULES` and `L.RECIPES` in `src/data.js` decide what happens when one thing is dropped on another. Examples: bread in the toaster makes toast; fruit and milk in the blender make a smoothie; tomato, cheese and bread on the stove make pizza; seeds on a plot plant them; the watering can on a plot waters it; food on a pet feeds it; clothes on a person dress them.
 - **Flower breeding and a collection book** (Section 7): drop a bloom on a different blooming flower to get new seeds, for example red and white make pink, with a rare rainbow rose.
+- **Zoom:** pinch with two fingers, use the mouse wheel, or tap the + and − buttons in the corner (keys `+`, `-` and `0` work too). Drag empty floor to look around while zoomed in; dragging something to the edge scrolls the view. Zoom goes up to 2.5x and resets when you change rooms.
 - **Decorating** (Section 8): a furniture catalog in 13 categories, colors, turning, walls, floors, undo, redo and reset room.
 - **Lilo Coins and the market** (Section 10): take food from shelves into a basket, drop the basket on the checkout to pay, and sell garden produce there. Coins can only be earned by playing.
 - **Free will** (Section 13): people choose what to do based on personality (calm is the neutral default), and the player can turn this off.

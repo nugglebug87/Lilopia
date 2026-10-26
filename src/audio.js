@@ -43,6 +43,10 @@ const SFX = {
   boop: () => tone(220, .18, 'sine', .35, 180),
   whoosh: () => noise(.35, .14, 400),
   pet: () => { tone(880, .1, 'sine', .25, 1200); tone(1100, .1, 'sine', .2, 1500, .1); },
+  trumpet: () => { tone(330, .45, 'sawtooth', .16, 660); tone(495, .45, 'square', .06, 990); },
+  roar: () => { tone(140, .5, 'sawtooth', .2, 90); noise(.4, .08, 300); },
+  ooh: () => { tone(500, .12, 'triangle', .25, 800); tone(620, .14, 'triangle', .22, 950, .14); },
+  boing: () => tone(220, .25, 'sine', .3, 660),
   grow: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, .14, 'triangle', .2, null, i * .07)); },
 };
 const NOTES = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];

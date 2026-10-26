@@ -117,6 +117,47 @@ const out = process.argv[3];
   await go('beach');
   check('travelled to the beach', await ev(`L.game.sceneId() === 'beach'`));
   await p.screenshot({ path: out + '/37-beach.png' });
+  // ---- zoom: buttons, tap and drag while zoomed, wheel, pinch, pan and reset
+  await go('home/living');
+  await ev(`(() => { const G = L.game; for (const n of ['Sunny', 'Leo']) G.bringHere(G.state().chars.find(c => c.name === n)); G.select(null); const S = G.state(); Object.assign(S.chars.find(c => c.name === 'Sunny'), { x: .4, z: .8 }); Object.assign(S.chars.find(c => c.name === 'Leo'), { x: .6, z: .8 }); const t = G.items().find(i => i.type === 'teddy'); if (t) Object.assign(t, { x: .5, z: .7 }); })()`);
+  // zoom buttons aim at the selected person, so pick Leo first to keep him and the teddy in view
+  await ev(`L.game.select(L.game.charsHere().find(c => c.name === 'Leo'))`);
+  await p.click('#zoomIn'); await p.click('#zoomIn'); await p.waitForTimeout(700);
+  await ev(`L.game.select(null)`);
+  const z2 = await ev(`L.game.zoomLevel()`);
+  check('zoom in buttons zoom to about 2x', z2 > 1.9 && z2 < 2.0);
+  check('reset button appears when zoomed', await p.isVisible('#zoomFit'));
+  const sun = await anchor(`e => e.name === 'Sunny'`);
+  check('Sunny is drawn bigger when zoomed', !!sun);
+  await p.mouse.click(box.x + sun.x, box.y + sun.y); await p.waitForTimeout(300);
+  check('tapping a person while zoomed selects them', await ev(`L.game.selected && L.game.selected.name === 'Sunny'`));
+  await ev(`L.game.select(null)`);
+  await dragTo(`e => e.type === 'teddy'`, `e => e.name === 'Leo'`);
+  check('dragging the teddy to Leo works while zoomed', await ev(`(L.game.state().chars.find(c => c.name === 'Leo').carry || {}).type === 'teddy'`));
+  await p.screenshot({ path: out + '/39-zoomed.png' });
+  // pan by dragging empty floor
+  const before = await anchor(`e => e.name === 'Leo'`);
+  await p.mouse.move(box.x + 60, box.y + box.height - 40); await p.mouse.down(); await p.mouse.move(box.x + 260, box.y + box.height - 40, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(200);
+  const after = await anchor(`e => e.name === 'Leo'`);
+  check('dragging empty floor pans the zoomed view', after.x - before.x > 100);
+  await p.click('#zoomFit'); await p.waitForTimeout(700);
+  check('reset returns to the whole room', await ev(`L.game.zoomLevel() === 1`) && !(await p.isVisible('#zoomFit')));
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await p.mouse.wheel(0, -400); await p.waitForTimeout(200);
+  check('mouse wheel zooms in', await ev(`L.game.zoomLevel() > 1.5`));
+  await p.click('#zoomFit'); await p.waitForTimeout(700);
+  // two-finger pinch with touch pointer events
+  const sel0 = await ev(`L.game.selected`);
+  await ev(`(() => { const cv = document.getElementById('cv'), r = cv.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * .45;
+    const fire = (type, id, x) => cv.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', clientX: x, clientY: cy, bubbles: true, isPrimary: id === 11 }));
+    fire('pointerdown', 11, cx - 40); fire('pointerdown', 12, cx + 40);
+    for (let i = 1; i <= 10; i++) { fire('pointermove', 11, cx - 40 - i * 6); fire('pointermove', 12, cx + 40 + i * 6); }
+    fire('pointerup', 11, cx - 100); fire('pointerup', 12, cx + 100); })()`);
+  const zp = await ev(`L.game.zoomLevel()`);
+  check('pinching with two fingers zooms in', zp > 2.3 && zp <= 2.5);
+  check('a pinch is not treated as a tap', await ev(`L.game.selected`) === sel0);
+  await go('home/kitchen');
+  check('changing rooms resets the zoom', await ev(`L.game.zoomLevel() === 1`));
+  await go('home/living');
   // ---- free will runs without errors for a while
   await ev(`L.game.setSettings({ freeWill: true })`); await go('home/living'); await p.waitForTimeout(6000);
   await p.screenshot({ path: out + '/38-freewill.png' });

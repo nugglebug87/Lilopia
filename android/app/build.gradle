@@ -18,7 +18,7 @@ def copyGame = tasks.register('copyGame', Sync) {
             return inPwa ? null : line
         }
     }
-    from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**' }
+    from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**', 'privacy-policy.html', 'terms-of-use.html', 'privacy-policy.html', 'terms-of-use.html' }
     into gameAssets.map { it.dir('game') }
 }
 

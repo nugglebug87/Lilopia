@@ -39,7 +39,10 @@ function expression(ch, t, mode) {
   if (a === 'hug' || a === 'love' || a === 'wave') return 'happy';
   if (mode === 'drag') return t - (ch._dragT || 0) < .6 ? 'surprised' : 'excited';
   if (ch._emo && t < ch._emo.until) return ch._emo.type;
-  return L.IDLE_EMOTION[ch.personality] || 'neutral';
+  const idle = L.IDLE_EMOTION[ch.personality] || 'neutral';
+  // Playful characters smile and only wink now and then, not all the time.
+  if (idle === 'playful') return ((t + (ch._seed || 0)) % 5) < .7 ? 'playful' : 'happy';
+  return idle;
 }
 L.charExpression = expression;
 
@@ -335,13 +338,17 @@ function accessory(c, t, ch) {
 
 /* ======================= pets ======================= */
 const PSIZE = { small: .82, medium: 1, large: 1.2 };
-L.petDims = p => { const s = PSIZE[p.size] || 1; return p.species === 'fish' ? { w: 56, h: 60 } : p.species === 'bird' ? { w: 40 * s, h: 44 * s } : { w: 54 * s, h: 54 * s }; };
+const PDIMS = { fish: [56, 60], bird: [40, 44], elephant: [86, 66], kangaroo: [56, 76], monkey: [52, 60] };
+L.petDims = p => { const s = PSIZE[p.size] || 1, d = PDIMS[p.species] || [54, 54]; return p.species === 'fish' ? { w: d[0], h: d[1] } : { w: d[0] * s, h: d[1] * s }; };
 L.drawPet = (c, t, p, mode = 'stand') => {
   const s = PSIZE[p.size] || 1;
   c.save(); c.scale(s, s);
   if (p.species === 'fish') fishbowl(c, t, p);
   else if (p.species === 'bird') bird(c, t, p, mode);
   else if (p.species === 'hamster') hamster(c, t, p, mode);
+  else if (p.species === 'kangaroo') kangaroo(c, t, p, mode);
+  else if (p.species === 'monkey') monkey(c, t, p, mode);
+  else if (p.species === 'elephant') elephant(c, t, p, mode);
   else quadruped(c, t, p, mode);
   c.restore();
 };
@@ -374,6 +381,11 @@ function quadruped(c, t, p, mode) {
   if (p.species === 'dog' || p.species === 'cat') { c.strokeStyle = p.pattern === 'patch' && p.species === 'dog' ? patch : body; c.lineWidth = p.fur === 'fluffy' ? 9 : 6; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-14, -2, -10, p.species === 'cat' ? -22 : -12); c.stroke(); }
   if (p.species === 'rabbit' || p.species === 'panda') ball(c, -2, -1, 6.5, p.species === 'panda' ? '#2a2733' : '#ffffff');
   if (p.species === 'fox') { ell(c, -12, -6, 15, 8, -.5); c.fillStyle = body; c.fill(); ell(c, -23, -12, 6, 5, -.5); c.fillStyle = '#ffffff'; c.fill(); }
+  if (p.species === 'tiger') {
+    c.strokeStyle = body; c.lineWidth = 6; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-18, 2, -16, -20); c.stroke();
+    c.lineCap = 'butt'; c.strokeStyle = patch; c.lineWidth = 6.2; c.setLineDash([2, 5]); c.beginPath(); c.moveTo(-3, 0); c.quadraticCurveTo(-18, 2, -16, -17); c.stroke(); c.setLineDash([]); c.lineCap = 'round';
+    ball(c, -16, -20.5, 3.2, patch);
+  }
   c.restore(); c.lineCap = 'butt';
   // legs
   [[-12], [-4], [6], [13]].forEach(([x], i) => {
@@ -412,6 +424,13 @@ function quadruped(c, t, p, mode) {
   ell(c, hx, hy + 4, 2.4, 1.7); c.fillStyle = p.species === 'cat' || p.species === 'rabbit' ? '#ff8fb0' : '#3a2430'; c.fill();
   c.strokeStyle = '#3a2430'; c.lineWidth = 1.2; c.beginPath(); c.arc(hx - 2, hy + 6, 2, .1 * Math.PI, .9 * Math.PI); c.arc(hx + 2, hy + 6, 2, .1 * Math.PI, .9 * Math.PI); c.stroke();
   if (p.species === 'dog' && (walk || hop > 0) && !sleeping) { ell(c, hx, hy + 10, 2.3, 3); c.fillStyle = '#ff7a9a'; c.fill(); }
+  if (p.species === 'tiger') {
+    c.strokeStyle = patch; c.lineWidth = 2; c.lineCap = 'round';
+    c.lineWidth = 1.6; for (const dx of [-3.5, 0, 3.5]) { c.beginPath(); c.moveTo(hx + dx, hy - 13.5); c.lineTo(hx + dx * .8, hy - 10); c.stroke(); }
+    for (const s2 of [-1, 1]) { c.beginPath(); c.moveTo(hx + s2 * 14.3, hy + 2); c.lineTo(hx + s2 * 11.5, hy + 3); c.moveTo(hx + s2 * 14, hy + 6); c.lineTo(hx + s2 * 11.5, hy + 6.5); c.stroke(); }
+    c.lineCap = 'butt';
+    c.strokeStyle = 'rgba(60,40,60,.5)'; c.lineWidth = .8; for (const s2 of [-1, 1]) for (const dy of [-1, 1.5]) { c.beginPath(); c.moveTo(hx + s2 * 6, hy + 5); c.lineTo(hx + s2 * 16, hy + 4 + dy * 2); c.stroke(); }
+  }
   if (p.species === 'cat') { c.strokeStyle = 'rgba(60,40,60,.5)'; c.lineWidth = .8; for (const s of [-1, 1]) for (const dy of [-1, 1.5]) { c.beginPath(); c.moveTo(hx + s * 6, hy + 5); c.lineTo(hx + s * 15, hy + 4 + dy * 2); c.stroke(); } }
   petAcc(c, p, hx, hy);
   c.restore();
@@ -445,6 +464,90 @@ function bird(c, t, p, mode) {
   c.beginPath(); c.moveTo(12, -32); c.lineTo(18, -30); c.lineTo(12, -27); c.closePath(); c.fillStyle = '#ff9a3d'; c.fill();
   petEyes(c, t, p, 6, 6, -33, sleeping, .8);
   ell(c, 10, -28, 2.6, 1.6); c.fillStyle = 'rgba(255,120,150,.4)'; c.fill();
+  c.restore();
+}
+/* Kangaroo: stands upright on big feet, hops when it moves, has a pouch. */
+function kangaroo(c, t, p, mode) {
+  const walk = mode === 'walk', ph = p._phase || 0, sleeping = mode === 'sleep', eating = mode === 'eat';
+  let hop = happyHop(p, t) + (walk ? Math.abs(Math.sin(ph * .55)) * 14 : 0);
+  if (mode === 'drag' || mode === 'held') hop = 0;
+  const body = p.color, belly = p.pattern === 'none' ? shade(body, .4) : p.patch, tuck = hop > 2 ? .5 : 0;
+  c.save(); c.translate(0, -hop);
+  if (sleeping) { c.translate(0, 10); c.rotate(-.15); }
+  c.strokeStyle = body; c.lineCap = 'round'; c.lineWidth = 9; c.beginPath(); c.moveTo(-8, -14); c.quadraticCurveTo(-24, -6, -36, -2); c.stroke(); c.lineWidth = 5; c.beginPath(); c.moveTo(-30, -4); c.lineTo(-40, -1); c.stroke(); c.lineCap = 'butt';
+  ell(c, 6, -2, 13, 3.6, tuck * .3); c.fillStyle = shade(body, -.22); c.fill();
+  ell(c, -2, -13, 12, 9, -.3 - tuck * .4); c.fillStyle = shade(body, -.06); c.fill();
+  const g = c.createRadialGradient(-4, -40, 3, 0, -30, 24); g.addColorStop(0, shade(body, .25)); g.addColorStop(1, shade(body, -.06));
+  ell(c, 0, -30, 13, 19, -.12); c.fillStyle = g; c.fill();
+  ell(c, 4, -26, 8, 13, -.12); c.fillStyle = belly; c.fill();
+  c.strokeStyle = shade(belly, -.18); c.lineWidth = 1.4; c.beginPath(); c.arc(4, -22, 6, .15 * Math.PI, .85 * Math.PI); c.stroke();
+  const armA = walk ? Math.sin(ph) * .3 : happyHop(p, t) ? -.8 : .3;
+  for (const dx of [6, 11]) { c.save(); c.translate(dx, -38); c.rotate(armA); L.rr(c, -2, 0, 4, 11, 2); c.fillStyle = shade(body, -.04); c.fill(); c.restore(); }
+  const hx = 6, hy = eating ? -40 : -54;
+  for (const s of [-1, 1]) { ell(c, hx + s * 4, hy - 12, 3.4, 9, s * .2); c.fillStyle = body; c.fill(); ell(c, hx + s * 4, hy - 11, 1.6, 6, s * .2); c.fillStyle = '#ffc2d1'; c.fill(); }
+  ball(c, hx, hy, 9, body);
+  ell(c, hx + 8, hy + 3, 6.5, 4.6); c.fillStyle = shade(body, .3); c.fill();
+  petEyes(c, t, p, hx - 3, hx + 4, hy - 1, sleeping, .78);
+  ell(c, hx + 13, hy + 2, 2, 1.5); c.fillStyle = '#3a2430'; c.fill();
+  ell(c, hx + 7, hy + 4, 2.4, 1.4); c.fillStyle = 'rgba(255,120,150,.35)'; c.fill();
+  petAcc(c, p, hx, hy - 2);
+  c.restore();
+}
+/* Monkey: big round ears, a heart-shaped face and a curly tail. */
+function monkey(c, t, p, mode) {
+  const walk = mode === 'walk', ph = p._phase || 0, sleeping = mode === 'sleep', eating = mode === 'eat';
+  let hop = happyHop(p, t); if (mode === 'drag' || mode === 'held') hop = 0;
+  const body = p.color, face = p.pattern === 'none' ? shade(body, .45) : p.patch;
+  c.save(); c.translate(0, -hop);
+  if (sleeping) c.translate(0, 6);
+  c.strokeStyle = body; c.lineWidth = 4.5; c.lineCap = 'round';
+  const sw = calm() ? 0 : Math.sin(t * 2) * 3;
+  c.beginPath(); c.moveTo(-10, -12); c.bezierCurveTo(-26, -10, -30, -28 + sw, -22, -34 + sw); c.bezierCurveTo(-16, -38 + sw, -14, -30 + sw, -19, -29 + sw); c.stroke();
+  for (const [x, i] of [[-6, 0], [6, 1]]) { const lift = walk ? Math.max(0, Math.sin(ph + i * Math.PI)) * 3 : 0; L.rr(c, x - 3.5, -12 - lift, 7, 12, 3.5); c.fillStyle = shade(body, -.08); c.fill(); ell(c, x + 1, -1 - lift, 4.5, 2.6); c.fillStyle = face; c.fill(); }
+  const g = c.createRadialGradient(-4, -26, 2, 0, -20, 18); g.addColorStop(0, shade(body, .2)); g.addColorStop(1, shade(body, -.08));
+  ell(c, 0, -20, 12, 13); c.fillStyle = g; c.fill();
+  ell(c, 1, -17, 7, 8); c.fillStyle = face; c.fill();
+  const up = hop > 1 || p._happyT != null && t - p._happyT < 1;
+  for (const s of [-1, 1]) {
+    c.save(); c.translate(s * 10, -27); c.rotate(up ? -s * 2.4 : walk ? Math.sin(ph + (s > 0 ? Math.PI : 0)) * .5 : s * .25);
+    L.rr(c, -2.5, 0, 5, 18, 2.5); c.fillStyle = shade(body, -.04); c.fill(); ball(c, 0, 18, 3.4, face); c.restore();
+  }
+  const hx = 0, hy = eating ? -36 : -42;
+  for (const s of [-1, 1]) { ball(c, hx + s * 13, hy, 6, body); ball(c, hx + s * 13, hy, 3.4, face); }
+  ball(c, hx, hy, 13, body);
+  ell(c, hx - 4, hy - 1, 5.6, 6.2); c.fillStyle = face; c.fill(); ell(c, hx + 4, hy - 1, 5.6, 6.2); c.fill(); ell(c, hx, hy + 5, 8, 5.6); c.fill();
+  petEyes(c, t, p, hx - 4, hx + 4, hy - 1, sleeping, .82);
+  c.fillStyle = '#3a2430'; for (const s of [-1, 1]) { c.beginPath(); c.arc(hx + s * 1.4, hy + 4, .9, 0, TAU); c.fill(); }
+  c.strokeStyle = '#3a2430'; c.lineWidth = 1.2; c.beginPath(); c.arc(hx, hy + 5.5, 3, .15 * Math.PI, .85 * Math.PI); c.stroke();
+  for (const s of [-1, 1]) { ell(c, hx + s * 7, hy + 4, 2.4, 1.4); c.fillStyle = 'rgba(255,120,150,.35)'; c.fill(); }
+  c.lineCap = 'butt'; petAcc(c, p, hx, hy);
+  c.restore();
+}
+/* Elephant: flapping ears, a trunk that lifts to trumpet when happy. */
+function elephant(c, t, p, mode) {
+  const walk = mode === 'walk', ph = p._phase || 0, sleeping = mode === 'sleep', eating = mode === 'eat';
+  let hop = happyHop(p, t) * .5; if (mode === 'drag' || mode === 'held') hop = 0;
+  const body = p.color, big = p.ears !== 'small', happy = p._happyT != null && t - p._happyT < 1.2;
+  c.save(); c.translate(0, -hop);
+  if (sleeping) c.translate(0, 6);
+  c.strokeStyle = shade(body, -.15); c.lineWidth = 2.5; c.beginPath(); c.moveTo(-26, -26); c.quadraticCurveTo(-32, -18 + Math.sin(t * 3) * 2, -31, -10); c.stroke(); ball(c, -31, -9, 2.6, shade(body, -.3));
+  [[-20], [-10], [8], [18]].forEach(([x], i) => { const lift = walk ? Math.max(0, Math.sin(ph * .7 + (i % 2 ? Math.PI : 0))) * 3 : 0; L.rr(c, x - 5, -16 - lift, 10, sleeping ? 6 : 16, [3, 3, 4, 4]); c.fillStyle = i % 2 ? body : shade(body, -.1); c.fill(); ell(c, x, -1 - lift, 5, 1.6); c.fillStyle = shade(body, .35); c.fill(); });
+  const g = c.createRadialGradient(-8, -38, 4, 0, -26, 32); g.addColorStop(0, shade(body, .22)); g.addColorStop(1, shade(body, -.08));
+  ell(c, 0, -26, 28, 18); c.fillStyle = g; c.fill();
+  const hx = 22, hy = eating ? -26 : -34, flap = calm() ? 0 : Math.sin(t * (happy ? 9 : 1.6)) * .12;
+  c.save(); c.translate(hx - 6, hy - 2); c.rotate(-.1 + flap);
+  ell(c, 0, 4, big ? 12 : 8, big ? 16 : 11); c.fillStyle = shade(body, -.1); c.fill();
+  ell(c, 1, 4, big ? 8 : 5, big ? 12 : 8); c.fillStyle = '#ffc2d1'; c.fill(); c.restore();
+  ball(c, hx, hy, 14, body);
+  const lift = happy ? 1 : eating ? -.3 : 0;
+  c.strokeStyle = shade(body, -.04); c.lineCap = 'round'; c.lineWidth = 8;
+  c.beginPath(); c.moveTo(hx + 9, hy + 4); c.quadraticCurveTo(hx + 20, hy + 6 - lift * 22, hx + 18 + lift * 6, hy + 22 - lift * 40); c.stroke();
+  c.lineWidth = 6; c.strokeStyle = shade(body, -.12); c.beginPath(); c.moveTo(hx + 18 + lift * 6, hy + 21 - lift * 40); c.lineTo(hx + 15 + lift * 6, hy + 24 - lift * 42); c.stroke();
+  if (big && !eating) { c.strokeStyle = '#fffaf0'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(hx + 8, hy + 8); c.quadraticCurveTo(hx + 12, hy + 14, hx + 16, hy + 12); c.stroke(); }
+  c.lineCap = 'butt';
+  petEyes(c, t, p, hx - 1, hx + 6, hy - 3, sleeping, .8);
+  ell(c, hx + 3, hy + 5, 3.4, 2); c.fillStyle = 'rgba(255,120,150,.35)'; c.fill();
+  petAcc(c, p, hx, hy + 2);
   c.restore();
 }
 function fishbowl(c, t, p) {
