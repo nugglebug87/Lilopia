@@ -244,7 +244,7 @@ function updatePet(p, dt) {
     else walkTo(p, rand(.08, .92), rand(.35, 1));
     p._ai.next = T + rand(3, 8) * (p.personality === 'playful' ? .6 : p.personality === 'sleepy' ? 1.5 : 1);
   }
-  walk(p, dt, p.species === 'rabbit' ? .2 : p.species === 'bird' ? .18 : p.species === 'hamster' ? .1 : .15);
+  walk(p, dt, { rabbit: .2, kangaroo: .24, bird: .18, monkey: .17, hamster: .1, elephant: .09 }[p.species] || .15);
 }
 
 /* ================= free will (Section 13) ================= */
@@ -674,7 +674,7 @@ function onUp(ev) {
   }
   const k = kindOf(e);
   if (k === 'char') { G.select(G.selected === e ? null : e); return; }
-  if (k === 'pet') { e._happyT = T; fxAt(e, 'heart', 3); sfx('pet'); emit('petTap', e); return; }
+  if (k === 'pet') { e._happyT = T; fxAt(e, 'heart', 3); sfx({ elephant: 'trumpet', tiger: 'roar', monkey: 'ooh', kangaroo: 'boing' }[e.species] || 'pet'); emit('petTap', e); return; }
   tapItem(e);
 }
 function beginDrag(e, pt, ext) {

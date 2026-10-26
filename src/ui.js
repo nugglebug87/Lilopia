@@ -494,7 +494,7 @@ function openAdopt(pet) {
       opts.appendChild(group('Fur color', swatches(cols, cols.indexOf(data.color), i => set('color', cols[i]))));
       opts.appendChild(group('Pattern', chips(L.PET_PATTERNS, data.pattern, v => set('pattern', v))));
       opts.appendChild(group('Pattern color', swatches(cols, cols.indexOf(data.patch), i => set('patch', cols[i]))));
-      if (!['fish', 'bird'].includes(data.species)) opts.appendChild(group('Fur length', chips([['short', 'Short'], ['fluffy', 'Fluffy']], data.fur, v => set('fur', v))));
+      if (!['fish', 'bird', 'elephant', 'kangaroo', 'monkey'].includes(data.species)) opts.appendChild(group('Fur length', chips([['short', 'Short'], ['fluffy', 'Fluffy']], data.fur, v => set('fur', v))));
       if (S0.ears.length > 1) opts.appendChild(group(data.species === 'bird' ? 'Head feathers' : 'Ears', chips(S0.ears.map(e => [e, e[0].toUpperCase() + e.slice(1)]), data.ears, v => set('ears', v))));
       opts.appendChild(group('Eye color', swatches(L.EYE_COLORS, L.EYE_COLORS.indexOf(data.eye), i => set('eye', L.EYE_COLORS[i]))));
       opts.appendChild(group('Size', chips(L.PET_SIZES, data.size, v => set('size', v))));

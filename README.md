@@ -90,7 +90,7 @@ Without a keystore the release APK is signed with the Android debug key. That is
 | Character dragging and positioning | Done | Spring-based lift, tilt and landing |
 | Basic character animations | Done | Walk, sit, sleep, eat, drink, dance, laugh, cry, wave, hug, jump, carry, hold a baby, hold a pet, cook, garden, shop, swing, slide, bathe, play piano |
 | Twenty functional interactive objects | Done (over 60) | Fridge, cabinets, wardrobe, toy box, seed box and shop shelves open; stove, toaster and blender cook; lamps, TV and sinks switch; beds, sofas, chairs, swings, slide and bathtub are usable; plots grow; checkout sells and buys |
-| Basic pet adoption | Done | Dogs, cats, rabbits, hamsters, birds and fish, with breed, fur color, pattern, fur length, ears, eye color, size, accessory, personality and name. Feed, pet, hold and nap |
+| Basic pet adoption | Done | Dogs, cats, rabbits, hamsters, birds, fish, tigers, kangaroos, monkeys and elephants, with breed, fur color, pattern, fur length, ears, eye color, size, accessory, personality and name. Feed, pet, hold and nap |
 | Small garden with plant growth | Done | Seed, sprout, young, mature, harvest. Watering doubles growth for a while. Plants never die and keep growing for up to 20 minutes while the game is closed |
 | Functional save/load | Done | Autosaves on every change, every 10 seconds and when the tab is hidden. Continue from the main menu |
 | Visible locked premium buildings | Done | All ten $5.99 expansions are on the map with a lock |
