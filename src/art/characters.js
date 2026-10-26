@@ -39,7 +39,10 @@ function expression(ch, t, mode) {
   if (a === 'hug' || a === 'love' || a === 'wave') return 'happy';
   if (mode === 'drag') return t - (ch._dragT || 0) < .6 ? 'surprised' : 'excited';
   if (ch._emo && t < ch._emo.until) return ch._emo.type;
-  return L.IDLE_EMOTION[ch.personality] || 'neutral';
+  const idle = L.IDLE_EMOTION[ch.personality] || 'neutral';
+  // Playful characters smile and only wink now and then, not all the time.
+  if (idle === 'playful') return ((t + (ch._seed || 0)) % 5) < .7 ? 'playful' : 'happy';
+  return idle;
 }
 L.charExpression = expression;
 
