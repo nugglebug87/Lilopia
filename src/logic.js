@@ -142,7 +142,7 @@ function makePet(p) {
   const sp = L.SPECIES[p.species] || L.SPECIES.dog;
   const breed = sp.breeds[p.breed] || Object.values(sp.breeds)[0];
   return Object.assign({ id: L.uid(), name: 'Pet', breed: Object.keys(sp.breeds)[0], color: breed.color, patch: breed.patch || '#ffffff', pattern: breed.pattern || 'none',
-    fur: breed.fur || 'short', ears: breed.ears || sp.ears[0], eye: breed.eye || '#3b2414', size: 'medium', acc: 'none', personality: 'cuddly', scene: 'home/living', x: .5, z: .9, fedAt: 0 }, p);
+    fur: breed.fur || 'short', ears: breed.ears || sp.ears[0], eye: breed.eye || '#3b2414', size: breed.size || 'medium', acc: 'none', personality: 'cuddly', scene: 'home/living', x: .5, z: .9, fedAt: 0 }, p);
 }
 
 /* ---------------- New game, save and load ---------------- */

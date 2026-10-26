@@ -127,3 +127,17 @@ test('the offline web app caches every game file', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
   for (const i of manifest.icons) assert.ok(cached.includes(i.src));
 });
+
+test('tiger, kangaroo, monkey and elephant can be adopted for free with sensible looks', () => {
+  const s = logic.newGame();
+  for (const sp of ['tiger', 'kangaroo', 'monkey', 'elephant']) {
+    assert.ok(L.SPECIES[sp], sp); assert.ok(!logic.isLocked(s, 'pet:' + sp), `${sp} should be free`);
+    for (const breed of Object.keys(L.SPECIES[sp].breeds)) {
+      const p = logic.makePet({ species: sp, breed });
+      assert.ok(L.SPECIES[sp].ears.includes(p.ears), `${sp} ${breed} ears ${p.ears}`);
+      assert.ok(['small', 'medium', 'large'].includes(p.size));
+    }
+  }
+  assert.equal(logic.makePet({ species: 'tiger', breed: 'Bengal Tiger' }).size, 'large');
+  assert.ok(logic.isLocked(s, 'pet:panda'), 'panda stays in Pet Paradise');
+});

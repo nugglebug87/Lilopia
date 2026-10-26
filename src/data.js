@@ -296,8 +296,12 @@ L.SPECIES = {
   fish: { name: 'Fish', ears: ['none'], breeds: { Goldfish: { color: '#ff8a2a' }, Betta: { color: '#6d5cff', patch: '#ff5fa8', pattern: 'stripes' }, Clownfish: { color: '#ff7a1a', patch: '#ffffff', pattern: 'stripes' } } },
   panda: { name: 'Panda', product: 'exp_pet_paradise', ears: ['round'], breeds: { Panda: { color: '#ffffff', patch: '#2a2733', pattern: 'panda' } } },
   fox: { name: 'Fox', product: 'exp_pet_paradise', ears: ['pointy'], breeds: { 'Red Fox': { color: '#ff8a3d', patch: '#ffffff', pattern: 'mask' } } },
+  tiger: { name: 'Tiger', ears: ['round'], breeds: { 'Bengal Tiger': { color: '#ff9a3d', patch: '#2a2230', pattern: 'stripes', size: 'large', eye: '#9a6a2a' }, 'White Tiger': { color: '#f4f1f7', patch: '#3b3348', pattern: 'stripes', size: 'large', eye: '#2f6fd6' }, 'Tiger Cub': { color: '#ffb36b', patch: '#3b2a24', pattern: 'stripes', size: 'small' } } },
+  kangaroo: { name: 'Kangaroo', ears: ['tall'], breeds: { 'Red Kangaroo': { color: '#c98b5e', patch: '#f6e6d2', pattern: 'mask' }, 'Grey Kangaroo': { color: '#a8a3b4', patch: '#ebe8f1', pattern: 'mask' }, Wallaby: { color: '#d9b48a', patch: '#f8ead8', pattern: 'mask', size: 'small' } } },
+  monkey: { name: 'Monkey', ears: ['round'], breeds: { Capuchin: { color: '#6b4a3a', patch: '#f6d9b8', pattern: 'mask' }, 'Golden Monkey': { color: '#f2b56b', patch: '#fff0d6', pattern: 'mask' }, 'Spider Monkey': { color: '#3b3348', patch: '#e8c8a8', pattern: 'mask' } } },
+  elephant: { name: 'Elephant', ears: ['big', 'small'], breeds: { 'African Elephant': { color: '#a9a6b6', ears: 'big', size: 'large' }, 'Asian Elephant': { color: '#bfbccb', ears: 'small' }, 'Pink Elephant': { color: '#ffb3d1', ears: 'big', size: 'small' } } },
 };
-L.PET_COLORS = ['#f6e6d2', '#c98b5e', '#6b4a3a', '#ffffff', '#bfc2cf', '#3b3348', '#ffb36b', '#f2b56b', '#ffe14d', '#7ed957', '#6d5cff', '#ff8fc4'];
+L.PET_COLORS = ['#f6e6d2', '#c98b5e', '#6b4a3a', '#ffffff', '#bfc2cf', '#a9a6b6', '#3b3348', '#ffb36b', '#ff9a3d', '#f2b56b', '#ffe14d', '#7ed957', '#6d5cff', '#ff8fc4'];
 L.PET_PATTERNS = [['none', 'Plain'], ['patch', 'Patches'], ['spots', 'Spots'], ['stripes', 'Stripes'], ['mask', 'Mask']];
 L.PET_SIZES = [['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']];
 L.PET_ACCS = [['none', 'None'], ['collar', 'Collar'], ['bow', 'Bow'], ['bandana', 'Bandana']];
@@ -340,7 +344,7 @@ L.LOOKS = {
 };
 L.CLOTH_COLORS = ['#ff8fc4', '#b9a3ff', '#ffffff', '#4f8dff', '#3fd0b4', '#ffc533', '#ff7a6b', '#3b3560', '#7ed957', '#5fb7ff', '#c98b5e', '#ff5fa8'];
 L.NAMES = ['Mia', 'Kai', 'Rosie', 'Max', 'Luna', 'Theo', 'Ivy', 'Noah', 'Zara', 'Eli', 'Pip', 'June', 'Omar', 'Nia', 'Sam', 'Ada'];
-L.PET_NAMES = ['Biscuit', 'Mochi', 'Pepper', 'Sunny', 'Button', 'Clover', 'Pudding', 'Nugget', 'Waffles', 'Pebble', 'Maple', 'Bubbles'];
+L.PET_NAMES = ['Biscuit', 'Mochi', 'Pepper', 'Peanut', 'Button', 'Clover', 'Pudding', 'Nugget', 'Waffles', 'Pebble', 'Maple', 'Bubbles'];
 
 /* ---------------------------------------------------------------
    Free will (Section 13). Weights per personality for idle activities.

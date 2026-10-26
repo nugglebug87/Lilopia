@@ -1,6 +1,6 @@
 /* LILOPIA service worker: keeps a copy of every game file so the web app works offline.
    Bump VERSION whenever any file in FILES changes, so players get the update. */
-const VERSION = 'lilopia-v2-legal';
+const VERSION = 'lilopia-v3-zoom';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'privacy-policy.html', 'terms-of-use.html',
   'assets/logo.webp', 'fonts/fonts.css', 'fonts/baloo2-4a324d.woff2', 'fonts/nunito-798ec6.woff2',
