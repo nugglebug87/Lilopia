@@ -42,39 +42,17 @@ LILOPIA is an installable web app (a PWA). It can be added to a phone's home scr
 
 Any static web host works too: upload `index.html`, `manifest.webmanifest`, `sw.js`, `src/`, `assets/`, `fonts/` and `icons/`. The service worker needs HTTPS (or `localhost`); opening `index.html` straight from disk still works, just without offline install.
 
-## Android app (prototype)
+## Android app
 
-`android/` is a native Android project that wraps this same game, so there is one copy of the game to maintain. At build time it copies `index.html`, `src/`, `assets/` and `fonts/` into the APK.
+The Android Play candidate is prepared in [PR #4](https://github.com/nugglebug87/Lilopia/pull/4). It wraps the bundled game files in a native Android app and keeps gameplay offline.
 
-- **Offline and private:** the app asks for **no permissions at all**, not even internet. The game is served from inside the APK, and the app refuses to open any other website.
-- **Landscape only**, full screen, with the system bars hidden. On sideways phones the dock folds down to its tabs to give the world more room.
-- **Back button** closes the top screen (a menu, the map, a selection, decorate mode), then goes to the main menu, then leaves the app.
-- **Saves** are kept on the device, written whenever the app goes to the background, and included in Android's backup.
-- Package `com.lilopia.game`, version `0.1.0-prototype`, Android 7.0 (API 24) and newer, targets API 35.
+- Package: `com.lilopia.game`; version 1.0.0, version code 2; minimum API 24, target API 36.
+- The candidate uses landscape orientation, disables Android backup, and declares internet, network-state and Google Play Billing permissions.
+- The release build is unsigned unless a protected upload key is configured; it never falls back to a debug signing key. Do not upload an unsigned bundle.
+- Play purchases are deliberately unavailable until the build is configured with a deployed HTTPS purchase verifier. Keep them disabled for gameplay-only testing.
+- The game save stays on the device. Clearing app storage or uninstalling removes it; there is no cloud sync or purchase restore for free gameplay data.
 
-### Install the prototype on a phone
-
-1. Copy `LILOPIA-0.1.0-prototype.apk` to the phone.
-2. Open it and allow installing from that app when Android asks.
-3. Android may warn that the app is from an unknown developer. That is expected for a test build.
-
-### Build it
-
-Needs JDK 17 or newer and the Android SDK (Android Studio installs both).
-
-```sh
-cd android
-echo "sdk.dir=/path/to/Android/sdk" > local.properties   # Android Studio writes this for you
-./gradlew assembleRelease    # app/build/outputs/apk/release/app-release.apk
-```
-
-Without a keystore the release APK is signed with the Android debug key. That is fine for test phones but Google Play will not accept it. For Play, create a keystore and add `android/keystore.properties` with `storeFile`, `storePassword`, `keyAlias` and `keyPassword` (it is git-ignored), then build an App Bundle with `./gradlew bundleRelease`.
-
-### What has been checked
-
-- The APK builds, is signed, requests no permissions and contains every game file.
-- The exact files packed in the APK were run in a phone-sized, touch-enabled browser with the internet blocked: the bundled fonts load, nothing is fetched from outside, and the back-button handler steps back correctly.
-- **Not yet checked on a real Android phone or emulator.** Please try it on a device, especially a low-cost one, as Section 16 asks.
+See [PLAY-RELEASE.md](PLAY-RELEASE.md) for the build, Console and billing handoff, and [VALIDATION.md](VALIDATION.md) for recorded checks and limits. The current validation record distinguishes historical test results from the October 26 game updates. Play-distributed and physical-device checks still need to be completed.
 
 ## How the first build maps to Section 18
 
