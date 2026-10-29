@@ -32,6 +32,20 @@ No signing credentials, service account keys, live purchase tokens or payment-ca
 
 The Android source in this branch includes the October 26 zoom implementation, four added pet species (tiger, kangaroo, monkey and elephant), and the corrected settings cog. The October 21 results above predate those gameplay changes and are historical evidence only; they do not prove that the current source built successfully or passed browser/device checks.
 
-The Android CI workflow runs the existing Playwright interaction suite (including zoom), screen/save checks, and Android UI contract check before producing an unsigned AAB. Its first run on October 29 stopped during Android SDK setup because the action requested the retired `tools` package; no test or build steps ran. The workflow now requests only `platform-tools`; its rerun must pass before treating the updated bundle as validated. No Play-distributed or physical-device test is recorded here.
+The Android CI workflow runs the Playwright interaction suite (including zoom), screen/save checks, Android UI contract check, and release build before producing an unsigned AAB. The first two October 29 attempts stopped during Android SDK setup because the action requested the retired `tools` package; no tests ran. The workflow now requests only `platform-tools`. No Play-distributed or physical-device test is recorded here.
 
 The candidate still has no upload-key signature and deliberately leaves purchases disabled because no deployed HTTPS verifier is configured. Internal Play installation still requires the owner to complete Console account/app setup, sign the validated AAB with a protected upload key, create the internal test release, and install through the tester opt-in link. Do not use this candidate for checkout testing.
+
+
+### October 29, 2026 CI run
+
+Run [#40926743738](https://github.com/nugglebug87/Lilopia/actions/runs/40926743738) on commit `60fd046e3ac7cc9c02bb76cdaebc715918d993a6` completed successfully:
+
+- Node unit/security tests: 22 passed, 0 failed.
+- Browser interaction checks: 35 passed, including zoom buttons, pan, wheel, pinch, selection, drag/drop and zoom reset.
+- Screen/save-and-continue checks: passed.
+- Android UI contract: passed; simulated and forged ownership rejected, premium travel blocked, development controls hidden, and purchases disabled without a verifier.
+- Android `bundleRelease`, `lintRelease` and `testReleaseUnitTest`: passed. The native Java test task reports `NO-SOURCE`.
+- Unsigned candidate AAB and lint report uploaded as artifact `lilopia-unsigned-release-candidate` (artifact ID `12919514463`). Download: https://github.com/nugglebug87/Lilopia/actions/runs/40926743738/artifacts/12919514463
+
+This run validates the updated source in CI; it does not establish a Play-distributed install, physical Android device result, real checkout, or signature. The AAB remains unsigned and must stay out of Play until signed with the owner's protected upload key. Purchases remain disabled until the verifier is deployed and configured.
