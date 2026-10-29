@@ -1,4 +1,4 @@
-# Release validation — October 21, 2026
+# Release validation — historical baseline captured October 21, 2026
 
 This is a packaging/billing-integration candidate, not a verified monetized Play release.
 
@@ -26,3 +26,12 @@ This is a packaging/billing-integration candidate, not a verified monetized Play
 The four lint warnings concern the retained landscape orientation, enabling JavaScript for the bundled game, and missing optional monochrome themed variants of the two adaptive icons. They are not hidden by a lint baseline. Gradle also reports deprecation notices for future Gradle 9 migration; the pinned Gradle 8.14.3 build succeeds.
 
 No signing credentials, service account keys, live purchase tokens or payment-card details were added to source or included in deliverables. The supplied AAB keeps purchases disabled until rebuilt with a deployed HTTPS verifier. A public contact and completed privacy policy are still required before review; the policy file is explicitly a draft. See PLAY-RELEASE.md for exact Console steps and the remaining test matrix.
+
+
+## Post-October 26 candidate status — October 29, 2026
+
+The Android source in this branch includes the October 26 zoom implementation, four added pet species (tiger, kangaroo, monkey and elephant), and the corrected settings cog. The October 21 results above predate those gameplay changes and are historical evidence only; they do not prove that the current source built successfully or passed browser/device checks.
+
+The Android CI workflow now runs the existing Playwright interaction suite (including zoom), screen/save checks, and Android UI contract check before producing an unsigned AAB. The run triggered by this update must pass before treating the updated bundle as validated. No Play-distributed or physical-device test is recorded here.
+
+The candidate still has no upload-key signature and deliberately leaves purchases disabled because no deployed HTTPS verifier is configured. Internal Play installation still requires the owner to complete Console account/app setup, sign the validated AAB with a protected upload key, create the internal test release, and install through the tester opt-in link. Do not use this candidate for checkout testing.

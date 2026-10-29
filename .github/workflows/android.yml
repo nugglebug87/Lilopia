@@ -20,6 +20,18 @@ jobs:
       - uses: android-actions/setup-android@v3
       - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
       - run: node --test tests/*.test.js
+      - name: Install Playwright Chromium for browser coverage
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run game interaction tests, including zoom
+        run: |
+          mkdir -p /tmp/lilopia-e2e
+          node tests/e2e/interactions.js "$GITHUB_WORKSPACE/index.html" /tmp/lilopia-e2e
+      - name: Run screen and save/continue checks
+        run: node tests/e2e/screens.js "$GITHUB_WORKSPACE/index.html" /tmp/lilopia-e2e
+      - name: Run Android release UI contract
+        run: node tests/e2e/android-release.js
       - run: bash android/gradlew -p android bundleRelease lintRelease testReleaseUnitTest --console=plain
       - uses: actions/upload-artifact@v4
         with:
