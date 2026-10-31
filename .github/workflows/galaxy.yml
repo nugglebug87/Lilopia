@@ -1,0 +1,40 @@
+name: Galaxy Store candidate
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'src/**'
+      - 'distribution/galaxy/**'
+      - 'tests/**'
+      - '.github/workflows/galaxy.yml'
+permissions:
+  contents: read
+jobs:
+  galaxy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - run: node --test tests/*.test.js
+      - name: Build and lint isolated Samsung candidate
+        run: bash android/gradlew -p android -Pdistribution=galaxy assembleRelease bundleRelease lintRelease --console=plain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lilopia-galaxy-unsigned-candidate
+          if-no-files-found: error
+          path: |
+            android/app/build/outputs/apk/release/*unsigned.apk
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/reports/lint-results-release.*
