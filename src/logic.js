@@ -20,7 +20,13 @@ function lookKey(field, value) {
   return prefix + ':' + (field === 'hairColor' && value[0] === '#' ? value.toLowerCase() : value).replace('#7fe0c4', 'mint');
 }
 const contentProduct = id => contentIndex[id] || null;
-const isOwned = (state, pid) => !!(state && state.owned && state.owned[pid]);
+const isOwned = (state, pid) => {
+  if (globalThis.LilopiaAndroid) {
+    try { return !!PRODUCTS[pid] && globalThis.LilopiaAndroid.owns(PRODUCTS[pid].productId); }
+    catch (_) { return false; }
+  }
+  return !!(state && state.owned && state.owned[pid]);
+};
 const isLocked = (state, contentId) => { const p = contentProduct(contentId); return !!p && !isOwned(state, p); };
 const lookLocked = (state, field, value) => isLocked(state, lookKey(field, value));
 
@@ -176,20 +182,22 @@ function newGame() {
 }
 /* Returns a playable state from saved data, or null if it cannot be used. */
 function migrate(raw) {
-  if (!raw || typeof raw !== 'object' || raw.v !== SAVE_VERSION || !raw.scenes || !Array.isArray(raw.chars)) return null;
+  if (!raw || typeof raw !== 'object' || raw.v !== SAVE_VERSION || !raw.scenes || typeof raw.scenes !== 'object' || Array.isArray(raw.scenes) || !Array.isArray(raw.chars)) return null;
   const fresh = newGame();
   const s = Object.assign({}, fresh, raw);
   s.settings = Object.assign({}, fresh.settings, raw.settings);
   s.discovered = Object.assign({}, fresh.discovered, raw.discovered);
   s.owned = raw.owned && typeof raw.owned === 'object' ? raw.owned : {};
+  s.scenes = {};
+  const validItem = i => i && typeof i === 'object' && Object.hasOwn(OBJECTS, i.type);
   for (const id of sceneIds()) {
     const sc = raw.scenes[id];
-    s.scenes[id] = sc && Array.isArray(sc.items) ? { items: sc.items.filter(i => OBJECTS[i.type]), wall: sc.wall || L.SCENES[id].wall, floor: sc.floor || L.SCENES[id].floor } : fresh.scenes[id];
+    s.scenes[id] = sc && Array.isArray(sc.items) ? { items: sc.items.filter(validItem), wall: sc.wall || L.SCENES[id].wall, floor: sc.floor || L.SCENES[id].floor } : fresh.scenes[id];
   }
-  s.chars = raw.chars.map(makeChar).map(c => L.SCENES[c.scene] ? c : Object.assign(c, { scene: 'home/living' }));
-  s.pets = (Array.isArray(raw.pets) ? raw.pets : []).filter(p => L.SPECIES[p.species]).map(p => makePet(p)).map(p => L.SCENES[p.scene] ? p : Object.assign(p, { scene: 'home/living' }));
-  s.bag = (Array.isArray(raw.bag) ? raw.bag : []).filter(b => OBJECTS[b.type]);
-  if (!L.SCENES[s.scene]) s.scene = 'home/living';
+  s.chars = raw.chars.filter(c => c && typeof c === 'object').map(makeChar).map(c => Object.hasOwn(L.SCENES, c.scene) ? c : Object.assign(c, { scene: 'home/living' }));
+  s.pets = (Array.isArray(raw.pets) ? raw.pets : []).filter(p => p && typeof p === 'object' && Object.hasOwn(L.SPECIES, p.species)).map(p => makePet(p)).map(p => Object.hasOwn(L.SCENES, p.scene) ? p : Object.assign(p, { scene: 'home/living' }));
+  s.bag = (Array.isArray(raw.bag) ? raw.bag : []).filter(validItem);
+  if (!Object.hasOwn(L.SCENES, s.scene)) s.scene = 'home/living';
   if (!['day', 'sunset', 'night'].includes(s.tod)) s.tod = 'day';
   s.coins = Number.isFinite(raw.coins) ? Math.max(0, raw.coins) : L.START_COINS;
   return s;

@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
     private static final String START_URL = "https://" + HOST + "/assets/game/index.html";
 
     private WebView web;
+    private PlayStore store;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +36,8 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setBackgroundColor(0xFFF6EEFF);
         setContentView(web);
+        store = new PlayStore(this, web);
+        web.addJavascriptInterface(store, "LilopiaAndroid");
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .setDomain(HOST)
@@ -43,15 +46,31 @@ public class MainActivity extends Activity {
 
         web.setWebViewClient(new WebViewClientCompat() {
             @Override
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                // Recover the bundled game from its last autosave after renderer failure.
+                if (store != null) { store.close(); store = null; }
+                if (view.getParent() instanceof android.view.ViewGroup)
+                    ((android.view.ViewGroup) view.getParent()).removeView(view);
+                view.destroy(); web = null;
+                recreate();
+                return true;
+            }
+
+            @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return loader.shouldInterceptRequest(request.getUrl());
+                Uri url = request.getUrl();
+                if (!AssetPolicy.allows(url.toString())) {
+                    return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", java.util.Collections.emptyMap(), new java.io.ByteArrayInputStream(new byte[0]));
+                }
+                WebResourceResponse response = loader.shouldInterceptRequest(url);
+                return response != null ? response : new WebResourceResponse("text/plain", "UTF-8", 404, "Missing", java.util.Collections.emptyMap(), new java.io.ByteArrayInputStream(new byte[0]));
             }
 
             @Override
             public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
                 // Keep children inside the game: never open other websites.
                 Uri url = request.getUrl();
-                return !HOST.equals(url.getHost());
+                return !AssetPolicy.allows(url.toString());
             }
         });
 
@@ -64,19 +83,36 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setTextZoom(100);
         s.setMediaPlaybackRequiresUserGesture(true);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        s.setGeolocationEnabled(false);
+        s.setAllowFileAccessFromFileURLs(false);
+        s.setAllowUniversalAccessFromFileURLs(false);
 
         boolean debuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         WebView.setWebContentsDebuggingEnabled(debuggable);
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         if (web.getUrl() == null) web.loadUrl(START_URL);
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleGameBack);
+        }
         hideSystemBars();
     }
 
     /** The back button closes the game's top screen first; with nothing open it leaves the app. */
     @Override
     @SuppressWarnings("deprecation")
+    // API 33+ uses the registered OnBackInvokedDispatcher above. This override is only
+    // the API 24-32 fallback; lint cannot infer the platform-version dispatch.
+    @android.annotation.SuppressLint("GestureBackNavigation")
     public void onBackPressed() {
+        handleGameBack();
+    }
+
+    private void handleGameBack() {
+        if (web == null) return;
+        if (web.canGoBack()) { web.goBack(); return; }
         web.evaluateJavascript("(window.lilopiaBack && window.lilopiaBack()) ? 1 : 0", result -> {
             if (!"1".equals(result)) moveTaskToBack(true);
         });
@@ -84,15 +120,16 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        web.evaluateJavascript("window.L && L.game && L.game.saveNow && L.game.saveNow()", null);
-        web.onPause();
+        if (web != null) web.evaluateJavascript("window.L && L.game && L.game.saveNow && L.game.saveNow()", null);
+        if (web != null) web.onPause();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        web.onResume();
+        if (web != null) web.onResume();
+        if (store != null) store.refresh();
         hideSystemBars();
     }
 
@@ -105,12 +142,16 @@ public class MainActivity extends Activity {
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        web.saveState(outState);
+        if (web != null) web.saveState(outState);
     }
 
     @Override
     protected void onDestroy() {
-        web.destroy();
+        if (store != null) store.close();
+        if (web != null) {
+            web.removeJavascriptInterface("LilopiaAndroid");
+            web.destroy();
+        }
         super.onDestroy();
     }
 

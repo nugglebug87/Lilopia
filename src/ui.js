@@ -9,6 +9,17 @@ const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls)
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const S = () => G.state();
 const sfx = n => L.sfx(n);
+const play = globalThis.LilopiaAndroid;
+const owned = pid => play ? (logic.isOwned(S(), pid) ? 'verified' : null) : S().owned[pid];
+const price = p => play ? (play.price(p.productId) || 'Store unavailable') : p.price;
+globalThis.lilopiaStoreChanged = message => {
+  if (message) toast(message);
+  if (S()) {
+    const location = L.LOCATIONS[S().scene.split('/')[0]];
+    if (location && location.product && !logic.isOwned(S(), location.product)) G.goto('home/living');
+    renderDock(); if (stack.length) drawSheet();
+  }
+};
 
 /* ---------------- icons ---------------- */
 const P = {
@@ -535,13 +546,13 @@ function openPreview(pid) {
     body.appendChild(el('p', 'fine', esc(p.blurb)));
     const inc = el('ul', 'inc'); for (const i of p.includes) inc.appendChild(el('li', null, esc(i))); body.appendChild(group("What's included", inc));
     const row = el('div'); row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '12px'; row.style.flexWrap = 'wrap';
-    row.appendChild(el('span', 'price', esc(p.price)));
-    const how = S().owned[pid];
+    row.appendChild(el('span', 'price', esc(price(p))));
+    const how = owned(pid);
     if (how) row.appendChild(el('span', 'pill ' + (how === 'dev' ? 'dev' : 'owned'), how === 'dev' ? 'Unlocked by a development flag' : 'Unlocked'));
     else if (!p.available) row.appendChild(el('span', 'pill soon', 'Coming soon'));
     body.appendChild(row);
     if (!how && !p.available) body.appendChild(el('p', 'fine', 'This pack is still being built, so it cannot be bought yet. It stays on the map so you can see what is coming.'));
-    if (!how && p.available) body.appendChild(el('p', 'fine', 'Only a grown-up can unlock packs. Purchases in this prototype are simulated and no money is charged.'));
+    if (!how && p.available) body.appendChild(el('p', 'fine', play ? 'Only a grown-up can buy packs through Google Play. Purchases must be verified before packs unlock.' : 'Only a grown-up can unlock packs. Purchases in this prototype are simulated and no money is charged.'));
     box.appendChild(body);
     const foot = el('footer'); foot.appendChild(el('span', 'sp'));
     const close = el('button', 'btn', 'Close'); close.addEventListener('click', closeSheet); foot.appendChild(close);
@@ -576,28 +587,29 @@ function openPurchase(pid) {
   pushSheet(box => {
     box.classList.add('narrow'); sheetHead(box, 'Confirm purchase', 'Parent purchase screen');
     const body = el('div', 'body');
-    body.appendChild(el('div', 'gateq', `${esc(p.name)}: ${esc(p.price)}`));
-    body.appendChild(el('p', 'fine', `Store product ${esc(p.productId)}. This prototype simulates the store, so no money is charged. A released game would show the Google Play or App Store payment sheet here, then verify the purchase.`));
+    body.appendChild(el('div', 'gateq', `${esc(p.name)}: ${esc(price(p))}`));
+    body.appendChild(el('p', 'fine', play ? 'Google Play confirms the final price. Packs unlock only after payment verification. If payment is pending or verification is unavailable, try Restore purchases later.' : `Store product ${esc(p.productId)}. This prototype simulates the store, so no money is charged.`));
     box.appendChild(body);
     const foot = el('footer'); foot.appendChild(el('span', 'sp'));
     const cancel = el('button', 'btn', 'Cancel'); cancel.addEventListener('click', closeSheet);
-    const buy = el('button', 'btn pink', svg('check') + 'Buy (simulated)');
-    buy.addEventListener('click', () => { G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); closeSheet(); if (stack.length) drawSheet(); renderDock(); });
+    const buy = el('button', 'btn pink', svg('check') + (play ? 'Buy with Google Play' : 'Buy (simulated)'));
+    buy.disabled = !!play && !play.available(p.productId);
+    buy.addEventListener('click', () => { if (play) { play.buy(p.productId); return; } G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); closeSheet(); if (stack.length) drawSheet(); renderDock(); });
     foot.append(cancel, buy); box.appendChild(foot);
   });
 }
 function openStore() {
   pushSheet(box => {
-    sheetHead(box, 'Parents: store and purchases', 'Every expansion is $5.99. Purchases are simulated in this prototype.');
+    sheetHead(box, 'Parents: store and purchases', play ? 'Optional expansion packs. Google Play supplies local prices.' : 'Every expansion is $5.99. Purchases are simulated in this prototype.');
     const body = el('div', 'body');
     for (const [pid, p] of Object.entries(L.PRODUCTS)) {
-      const row = el('div', 'prow'), how = S().owned[pid];
+      const row = el('div', 'prow'), how = owned(pid);
       row.appendChild(p.location && L.LOCATIONS[p.location] ? mapIconThumb(L.LOCATIONS[p.location].icon, 72, 60) : contentThumb(p.content[0], 72, 60));
-      const t = el('div'); t.appendChild(el('h3', null, esc(p.name))); t.appendChild(el('p', null, `${KIND[p.kind]} · ${esc(p.price)} · ${esc(p.blurb)}`)); row.appendChild(t);
+      const t = el('div'); t.appendChild(el('h3', null, esc(p.name))); t.appendChild(el('p', null, `${KIND[p.kind]} · ${esc(price(p))} · ${esc(p.blurb)}`)); row.appendChild(t);
       const acts = el('div', 'acts');
       if (how) acts.appendChild(el('span', 'pill ' + (how === 'dev' ? 'dev' : 'owned'), how === 'dev' ? 'Dev flag' : 'Owned'));
       else if (!p.available) acts.appendChild(el('span', 'pill soon', 'Coming soon'));
-      else { const b = el('button', 'btn primary', 'Buy (simulated)'); b.addEventListener('click', () => { G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); drawSheet(); renderDock(); }); acts.appendChild(b); }
+      else { const b = el('button', 'btn primary', play ? 'Buy with Google Play' : 'Buy (simulated)'); b.disabled = !!play && !play.available(p.productId); b.addEventListener('click', () => { if (play) { openPurchase(pid); return; } G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); drawSheet(); renderDock(); }); acts.appendChild(b); }
       const info = el('button', 'btn', 'Details'); info.addEventListener('click', () => openPreview(pid)); acts.appendChild(info);
       row.appendChild(acts); body.appendChild(row);
     }
@@ -605,7 +617,7 @@ function openStore() {
     box.appendChild(body);
     const foot = el('footer');
     const restore = el('button', 'btn', 'Restore purchases');
-    restore.addEventListener('click', () => { const n = Object.values(S().owned).filter(v => v === 'simulated').length; G.saveNow(); toast(`Restored ${n} purchase${n === 1 ? '' : 's'} saved on this device`); });
+    restore.addEventListener('click', () => { if (play) { play.restore(); return; } const n = Object.values(S().owned).filter(v => v === 'simulated').length; G.saveNow(); toast(`Restored ${n} simulated purchase${n === 1 ? '' : 's'} saved on this device`); });
     foot.append(restore, el('span', 'sp'));
     const done = el('button', 'btn primary', 'Done'); done.addEventListener('click', closeSheet); foot.appendChild(done);
     box.appendChild(foot);
@@ -633,22 +645,24 @@ function openSettings(fromTitle) {
     if (!fromTitle) {
       body.appendChild(el('p', 'sec', 'Parents'));
       const store = el('button', 'btn', svg('lock') + 'Store and purchases'); store.addEventListener('click', () => openGate(openStore)); body.appendChild(store);
+      if (!play) {
       body.appendChild(el('p', 'sec', 'Development only'));
       body.appendChild(el('p', 'fine', 'Ownership flags for testing locked and unlocked content without the store.'));
       const dev = el('div', 'set');
       for (const [pid, p] of Object.entries(L.PRODUCTS)) { if (!p.available) continue; dev.append(el('label', null, esc(p.name)), toggle(!!S().owned[pid], v => { if (v) G.grant(pid, 'dev'); else G.revoke(pid); renderDock(); }, `${p.name} development flag`)); }
       body.appendChild(dev);
+      }
     }
     const legal = el('div', 'set');
     for (const [label, path] of [['Privacy Policy', 'privacy-policy.html'], ['Terms of Use', 'terms-of-use.html']]) {
       const link = el('a', 'btn', label);
       link.href = new URL(path, document.baseURI).href;
-      link.target = '_blank';
+      link.target = inAndroid ? '_self' : '_blank';
       link.rel = 'noopener noreferrer';
       legal.appendChild(link);
     }
     body.appendChild(el('p', 'sec', 'Legal')); body.appendChild(legal);
-    body.appendChild(el('p', 'fine', 'LILOPIA has no chat, no ads, no accounts and no location sharing, and collects no personal information. Your world saves automatically on this device.'));
+    body.appendChild(el('p', 'fine', play ? 'LILOPIA has no chat, ads, accounts or location sharing. Your world saves on this device. Purchases send the product ID and Google Play purchase token to our verification service and Google Play. Packs require an online check after opening the app. Clear Android app storage to delete your saved world.' : 'LILOPIA has no chat, no ads, no accounts and no location sharing, and collects no personal information. Your world saves automatically on this device.'));
     box.appendChild(body);
     const foot = el('footer');
     if (!fromTitle) {

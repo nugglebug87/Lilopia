@@ -1,6 +1,6 @@
 /* LILOPIA service worker: keeps a copy of every game file so the web app works offline.
-   Bump VERSION whenever any file in FILES changes, so players get the update. */
-const VERSION = 'lilopia-v4-icons';
+   Run node tools/update-cache.cjs after changing a cached file. CI checks its digest. */
+const VERSION = 'lilopia-b5a4c87cfe120efa3e36';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'privacy-policy.html', 'terms-of-use.html',
   'assets/logo.webp', 'fonts/fonts.css', 'fonts/baloo2-4a324d.woff2', 'fonts/nunito-798ec6.woff2',
@@ -8,15 +8,24 @@ const FILES = [
   'src/core.js', 'src/data.js', 'src/logic.js', 'src/audio.js',
   'src/art/objects.js', 'src/art/characters.js', 'src/art/world.js', 'src/game.js', 'src/ui.js',
 ];
+// Let the old worker finish serving existing tabs before activating this version.
+const PREFIX = 'lilopia:' + self.registration.scope + ':';
+const CACHE = PREFIX + VERSION;
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys
+    .filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k)))));
 });
-/* Cache first, so the game opens instantly and offline; pages fall back to the cached index. */
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req).catch(() => req.mode === 'navigate' ? caches.match('index.html') : Response.error())));
+  const url = new URL(req.url);
+  const scope = new URL(self.registration.scope);
+  if (req.method !== 'GET' || url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
+  // Only this game's cache is authoritative. Unknown routes must not impersonate the game.
+  e.respondWith(caches.open(CACHE).then(async cache => {
+    const hit = await cache.match(req, { ignoreSearch: true });
+    return hit || fetch(req);
+  }));
 });
