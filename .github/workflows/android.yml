@@ -32,8 +32,8 @@ jobs:
           node tests/e2e/interactions.js "$GITHUB_WORKSPACE/index.html" /tmp/lilopia-e2e
       - name: Run screen and save/continue checks
         run: node tests/e2e/screens.js "$GITHUB_WORKSPACE/index.html" /tmp/lilopia-e2e
-      - name: Run Android release UI contract
-        run: node tests/e2e/android-release.js
+      - name: Run distribution ownership and save regression checks
+        run: node --test tests/galaxy.test.js
       - run: bash android/gradlew -p android bundleRelease lintRelease testReleaseUnitTest --console=plain
       - uses: actions/upload-artifact@v4
         with:

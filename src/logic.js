@@ -20,7 +20,7 @@ function lookKey(field, value) {
   return prefix + ':' + (field === 'hairColor' && value[0] === '#' ? value.toLowerCase() : value).replace('#7fe0c4', 'mint');
 }
 const contentProduct = id => contentIndex[id] || null;
-const isOwned = (state, pid) => !!(state && state.owned && state.owned[pid]);
+const isOwned = (state, pid) => globalThis.LILOPIA_DISTRIBUTION !== 'galaxy' && !!(state && state.owned && state.owned[pid]);
 const isLocked = (state, contentId) => { const p = contentProduct(contentId); return !!p && !isOwned(state, p); };
 const lookLocked = (state, field, value) => isLocked(state, lookKey(field, value));
 
@@ -181,7 +181,7 @@ function migrate(raw) {
   const s = Object.assign({}, fresh, raw);
   s.settings = Object.assign({}, fresh.settings, raw.settings);
   s.discovered = Object.assign({}, fresh.discovered, raw.discovered);
-  s.owned = raw.owned && typeof raw.owned === 'object' ? raw.owned : {};
+  s.owned = globalThis.LILOPIA_DISTRIBUTION === 'galaxy' ? {} : (raw.owned && typeof raw.owned === 'object' ? raw.owned : {});
   for (const id of sceneIds()) {
     const sc = raw.scenes[id];
     s.scenes[id] = sc && Array.isArray(sc.items) ? { items: sc.items.filter(i => OBJECTS[i.type]), wall: sc.wall || L.SCENES[id].wall, floor: sc.floor || L.SCENES[id].floor } : fresh.scenes[id];
@@ -189,6 +189,11 @@ function migrate(raw) {
   s.chars = raw.chars.map(makeChar).map(c => L.SCENES[c.scene] ? c : Object.assign(c, { scene: 'home/living' }));
   s.pets = (Array.isArray(raw.pets) ? raw.pets : []).filter(p => L.SPECIES[p.species]).map(p => makePet(p)).map(p => L.SCENES[p.scene] ? p : Object.assign(p, { scene: 'home/living' }));
   s.bag = (Array.isArray(raw.bag) ? raw.bag : []).filter(b => OBJECTS[b.type]);
+  if (globalThis.LILOPIA_DISTRIBUTION === 'galaxy') {
+    const freeScene = sid => !!L.SCENES[sid] && !L.LOCATIONS[sid.split('/')[0]].product;
+    if (!freeScene(s.scene)) s.scene = 'home/living';
+    for (const c of [...s.chars, ...s.pets]) if (!freeScene(c.scene)) c.scene = 'home/living';
+  }
   if (!L.SCENES[s.scene]) s.scene = 'home/living';
   if (!['day', 'sunset', 'night'].includes(s.tod)) s.tod = 'day';
   s.coins = Number.isFinite(raw.coins) ? Math.max(0, raw.coins) : L.START_COINS;

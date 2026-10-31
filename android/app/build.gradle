@@ -4,10 +4,13 @@ plugins {
 
 // The game itself lives at the repository root (index.html, src/, assets/).
 // It is copied into the APK at build time so there is one copy of the game to maintain.
+def galaxyBuild = providers.gradleProperty('distribution').getOrElse('default') == 'galaxy'
 def gameRoot = rootProject.file('..')
 def gameAssets = layout.buildDirectory.dir('generated/gameAssets')
 
 def copyGame = tasks.register('copyGame', Sync) {
+    inputs.property('galaxyBuild', galaxyBuild)
+    inputs.dir(gameRoot.toPath().resolve('distribution/galaxy').toFile())
     from(gameRoot) {
         include 'index.html'
         // The installable-web-app tags (manifest, icons) are not needed inside the app.
@@ -15,11 +18,26 @@ def copyGame = tasks.register('copyGame', Sync) {
         filter { String line ->
             if (line.contains('@@PWA-START@@')) { inPwa = true; return null }
             if (line.contains('@@PWA-END@@')) { inPwa = false; return null }
+            if (galaxyBuild && line.contains('<script src="src/core.js">')) {
+                return '<script>globalThis.LILOPIA_DISTRIBUTION = "galaxy";</script>' + line
+            }
             return inPwa ? null : line
         }
     }
     from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**', 'privacy-policy.html', 'terms-of-use.html' }
+    if (galaxyBuild) {
+        exclude 'privacy-policy.html', 'terms-of-use.html'
+    }
     into gameAssets.map { it.dir('game') }
+    doLast {
+        if (galaxyBuild) {
+            copy {
+                from gameRoot.toPath().resolve('distribution/galaxy').toFile()
+                include 'privacy-policy.html', 'terms-of-use.html'
+                into gameAssets.get().dir('game').asFile
+            }
+        }
+    }
 }
 
 // Optional release signing: put these in android/keystore.properties (never commit it).
@@ -32,11 +50,12 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.lilopia.game'
+        applicationId galaxyBuild ? 'com.lilopia.game.samsung' : 'com.lilopia.game'
         minSdk 24
         targetSdk 35
-        versionCode 1
-        versionName '0.1.0'
+        versionCode galaxyBuild ? 2 : 1
+        versionName galaxyBuild ? '0.1.1' : '0.1.0'
+        manifestPlaceholders = [backupEnabled: galaxyBuild ? 'false' : 'true', extractionRules: galaxyBuild ? '@xml/galaxy_data_extraction_rules' : '@null']
     }
 
     signingConfigs {

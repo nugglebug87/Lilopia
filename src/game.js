@@ -579,7 +579,7 @@ G.rehomePet = p => { for (const c of S.chars) if (c._hold && c._hold.pet === p) 
 G.bringPet = p => { p.scene = S.scene; p.x = rand(.3, .7); p.z = rand(.82, .95); p._use = null; p._born = T; p._heldBy = null; sfx('pet'); save(); };
 G.setTod = tod => { S.tod = tod; bgKey = ''; save(); };
 G.setSettings = s => { Object.assign(S.settings, s); L.audio.setVolumes(S.settings.sfx, S.settings.music); L.reducedMotion = !!S.settings.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches; save(); };
-G.grant = (pid, how) => { S.owned[pid] = how; save(); emit('owned', pid); };
+G.grant = (pid, how) => { if (globalThis.LILOPIA_DISTRIBUTION === 'galaxy') return false; S.owned[pid] = how; save(); emit('owned', pid); };
 G.revoke = pid => { delete S.owned[pid]; save(); emit('owned', pid); };
 G.findChar = id => S.chars.find(c => c.id === id);
 

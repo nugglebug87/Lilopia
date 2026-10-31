@@ -4,6 +4,7 @@
 (function (L) {
 'use strict';
 const G = L.game, logic = L.logic;
+const galaxyRelease = globalThis.LILOPIA_DISTRIBUTION === 'galaxy';
 const $ = id => document.getElementById(id);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -535,17 +536,18 @@ function openPreview(pid) {
     body.appendChild(el('p', 'fine', esc(p.blurb)));
     const inc = el('ul', 'inc'); for (const i of p.includes) inc.appendChild(el('li', null, esc(i))); body.appendChild(group("What's included", inc));
     const row = el('div'); row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '12px'; row.style.flexWrap = 'wrap';
-    row.appendChild(el('span', 'price', esc(p.price)));
-    const how = S().owned[pid];
+    if (!galaxyRelease) row.appendChild(el('span', 'price', esc(p.price)));
+    const how = logic.isOwned(S(), pid) && S().owned[pid];
     if (how) row.appendChild(el('span', 'pill ' + (how === 'dev' ? 'dev' : 'owned'), how === 'dev' ? 'Unlocked by a development flag' : 'Unlocked'));
-    else if (!p.available) row.appendChild(el('span', 'pill soon', 'Coming soon'));
+    else if (galaxyRelease || !p.available) row.appendChild(el('span', 'pill soon', 'Coming soon'));
     body.appendChild(row);
-    if (!how && !p.available) body.appendChild(el('p', 'fine', 'This pack is still being built, so it cannot be bought yet. It stays on the map so you can see what is coming.'));
-    if (!how && p.available) body.appendChild(el('p', 'fine', 'Only a grown-up can unlock packs. Purchases in this prototype are simulated and no money is charged.'));
+    if (galaxyRelease) body.appendChild(el('p', 'fine', 'This expansion is not included in this version. There are no purchases in this release. Enjoy the starter house, playground, and market.'));
+    if (!galaxyRelease && !how && !p.available) body.appendChild(el('p', 'fine', 'This pack is still being built, so it cannot be bought yet. It stays on the map so you can see what is coming.'));
+    if (!galaxyRelease && !how && p.available) body.appendChild(el('p', 'fine', 'Only a grown-up can unlock packs. Purchases in this prototype are simulated and no money is charged.'));
     box.appendChild(body);
     const foot = el('footer'); foot.appendChild(el('span', 'sp'));
     const close = el('button', 'btn', 'Close'); close.addEventListener('click', closeSheet); foot.appendChild(close);
-    if (!how && p.available) { const ask = el('button', 'btn primary', svg('lock') + 'Ask a grown-up'); ask.addEventListener('click', () => openGate(() => openPurchase(pid))); foot.appendChild(ask); }
+    if (!galaxyRelease && !how && p.available) { const ask = el('button', 'btn primary', svg('lock') + 'Ask a grown-up'); ask.addEventListener('click', () => openGate(() => openPurchase(pid))); foot.appendChild(ask); }
     box.appendChild(foot);
   });
 }
@@ -572,6 +574,7 @@ function openGate(onPass) {
   });
 }
 function openPurchase(pid) {
+  if (galaxyRelease) return openPreview(pid);
   const p = L.PRODUCTS[pid];
   pushSheet(box => {
     box.classList.add('narrow'); sheetHead(box, 'Confirm purchase', 'Parent purchase screen');
@@ -587,6 +590,7 @@ function openPurchase(pid) {
   });
 }
 function openStore() {
+  if (galaxyRelease) return;
   pushSheet(box => {
     sheetHead(box, 'Parents: store and purchases', 'Every expansion is $5.99. Purchases are simulated in this prototype.');
     const body = el('div', 'body');
@@ -630,7 +634,7 @@ function openSettings(fromTitle) {
       inst.addEventListener('click', async () => { const p = installPrompt; installPrompt = null; p.prompt(); try { await p.userChoice; } catch (e) { /* dismissed */ } inst.remove(); });
       body.appendChild(inst);
     }
-    if (!fromTitle) {
+    if (!fromTitle && !galaxyRelease) {
       body.appendChild(el('p', 'sec', 'Parents'));
       const store = el('button', 'btn', svg('lock') + 'Store and purchases'); store.addEventListener('click', () => openGate(openStore)); body.appendChild(store);
       body.appendChild(el('p', 'sec', 'Development only'));
@@ -643,7 +647,7 @@ function openSettings(fromTitle) {
     for (const [label, path] of [['Privacy Policy', 'privacy-policy.html'], ['Terms of Use', 'terms-of-use.html']]) {
       const link = el('a', 'btn', label);
       link.href = new URL(path, document.baseURI).href;
-      link.target = '_blank';
+      link.target = galaxyRelease ? '_self' : '_blank';
       link.rel = 'noopener noreferrer';
       legal.appendChild(link);
     }
