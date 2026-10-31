@@ -1,18 +1,18 @@
 # LILOPIA Google Play release handoff
 
-Prepared October 21, 2026. Release candidate, not approved for production.
+Updated October 30, 2026. Release candidate, not approved for production.
 
 ## Application and artifact
 
 - Existing game and bundled art retained; no game replacement or remote wrapper dependency.
 - Application ID / namespace: `com.lilopia.game` (retained from repository). Check availability when creating the first Play app; do not change after first upload.
-- Version name `1.0.0`, version code `2`; increment code for every later upload (`-PversionCode=3`).
-- Minimum Android API 24; compile/target API 36. Android Gradle Plugin 8.10.1, Gradle 8.14.3, JDK 17.
+- Version name `1.0.1`, version code `3`; increment code for every later upload (`-PversionCode=4`).
+- Minimum Android API 24; compile/target API 36. Android Gradle Plugin 8.13.2, Gradle 8.14.3, JDK 17.
 - `bundleRelease` produces an **unsigned release AAB** when no upload key is configured. There is no debug signing fallback. Sign with your upload key before Play accepts it.
 - Existing multi-density/adaptive launcher icon and Android 12+ splash retained. Store icon: `icons/icon-512.png`.
 - No native `.so` libraries are intentionally included; check the final bundle for accidental native dependencies and run Play pre-launch tests, including 16 KB page-size devices.
 - WebView allows only bundled HTTPS asset-origin resources, disables file/content/geolocation/mixed-content access, and blocks outside navigation. Release WebView debugging is disabled.
-- Final merged permissions verified: `INTERNET`, `ACCESS_NETWORK_STATE`, and `com.android.vending.BILLING`. No camera, microphone, location, advertising ID, contacts, storage or notification permissions are present. Google Play Billing includes Google transport/diagnostic dependencies; review their current SDK disclosures as well as app/server data handling before final Data Safety answers.
+- Final merged permissions verified: `INTERNET`, `ACCESS_NETWORK_STATE`, `com.android.vending.BILLING`, and the app-scoped signature permission `com.lilopia.game.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. No camera, microphone, location, advertising ID, contacts, storage or notification permissions are present. Google Play Billing includes Google transport/diagnostic dependencies; review their current SDK disclosures as well as app/server data handling before final Data Safety answers.
 - Android backup disabled. Saved world stays on the device; clearing app storage/uninstalling deletes it. Progress is not restored from the website.
 
 ## Build and upload signing

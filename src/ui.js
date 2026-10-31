@@ -657,7 +657,7 @@ function openSettings(fromTitle) {
     for (const [label, path] of [['Privacy Policy', 'privacy-policy.html'], ['Terms of Use', 'terms-of-use.html']]) {
       const link = el('a', 'btn', label);
       link.href = new URL(path, document.baseURI).href;
-      link.target = '_blank';
+      link.target = inAndroid ? '_self' : '_blank';
       link.rel = 'noopener noreferrer';
       legal.appendChild(link);
     }

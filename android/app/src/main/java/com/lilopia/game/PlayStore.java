@@ -27,6 +27,13 @@ public final class PlayStore implements PurchasesUpdatedListener {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private volatile boolean closed;
     private boolean connecting;
+    private volatile int refreshGeneration;
+
+    private void submit(Runnable task) {
+        if (closed) return;
+        try { worker.execute(() -> { if (!closed) task.run(); }); }
+        catch (RejectedExecutionException ignored) { /* Activity was destroyed during a callback. */ }
+    }
 
     PlayStore(Activity activity, WebView web) {
         this.activity = activity; this.web = web;
@@ -42,6 +49,7 @@ public final class PlayStore implements PurchasesUpdatedListener {
         client.startConnection(new BillingClientStateListener() {
             public void onBillingSetupFinished(BillingResult result) {
                 connecting = false;
+                if (closed) return;
                 if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) { catalog(); refresh(); }
             }
             public void onBillingServiceDisconnected() { connecting = false; details.clear(); notifyWeb("Store disconnected. Please try again."); }
@@ -60,6 +68,7 @@ public final class PlayStore implements PurchasesUpdatedListener {
     @JavascriptInterface public void buy(String id) {
         if (!PRODUCTS.contains(id) || !available(id)) { notifyWeb("Purchases are unavailable. No payment was started."); return; }
         activity.runOnUiThread(() -> {
+            if (closed || activity.isFinishing()) return;
             // Native parent gate prevents web code from launching a payment directly.
             int a = 12 + new java.security.SecureRandom().nextInt(8), b = 7;
             EditText answer = new EditText(activity); answer.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -84,6 +93,7 @@ public final class PlayStore implements PurchasesUpdatedListener {
         for (String id : PRODUCTS) products.add(QueryProductDetailsParams.Product.newBuilder()
             .setProductId(id).setProductType(BillingClient.ProductType.INAPP).build());
         client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(products).build(), (result, response) -> {
+            if (closed) return;
             details.clear();
             if (result.getResponseCode() == BillingClient.BillingResponseCode.OK)
                 for (ProductDetails d : response.getProductDetailsList()) details.put(d.getProductId(), d);
@@ -91,26 +101,32 @@ public final class PlayStore implements PurchasesUpdatedListener {
         });
     }
     void refresh() {
-        if (BuildConfig.VERIFICATION_URL.isEmpty()) return;
+        if (closed) return;
+        if (BuildConfig.VERIFICATION_URL.isEmpty()) { notifyWeb("Purchases are not enabled in this build."); return; }
         if (!client.isReady()) { connect(); notifyWeb("Connecting to Google Play. Please try again shortly."); return; }
         if (details.isEmpty()) catalog();
+        final int generation = ++refreshGeneration;
         client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
             (result, purchases) -> {
                 if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) { notifyWeb("Could not restore purchases. Please try again."); return; }
-                // Serial verification avoids an older query overwriting a newer purchase result.
-                worker.execute(() -> {
+                if (closed || generation != refreshGeneration) return;
+                // Recheck generation on completion: callbacks may arrive out of order.
+                submit(() -> {
                     Set<String> verified = new HashSet<>();
                     for (Purchase p : purchases) verified.addAll(verify(p));
+                    if (closed || generation != refreshGeneration) return;
                     owned.clear(); owned.addAll(verified);
-                    notifyWeb("Purchase check complete.");
+                    notifyWeb(purchases.isEmpty() ? "No purchases to restore." : "");
                 });
             });
     }
     @Override public void onPurchasesUpdated(BillingResult result, List<Purchase> purchases) {
+        if (closed) return;
+        ++refreshGeneration; // Invalidate any older restore snapshot before granting a new purchase.
         if (result.getResponseCode() == BillingClient.BillingResponseCode.OK && purchases != null) {
-            worker.execute(() -> {
+            submit(() -> {
                 for (Purchase p : purchases) owned.addAll(verify(p));
-                notifyWeb("Purchase check complete.");
+                notifyWeb("");
             });
         } else if (result.getResponseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) refresh();
         else notifyWeb(result.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED

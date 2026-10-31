@@ -1,5 +1,6 @@
 name: Android release candidate
 on:
+  workflow_call:
   workflow_dispatch:
   pull_request:
     branches: [main]
@@ -21,23 +22,29 @@ jobs:
         with:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
-      - run: node --test tests/*.test.js
       - name: Install Playwright Chromium for browser coverage
         run: |
-          npm install --no-save --package-lock=false playwright@1.56.1
+          npm ci
+          npm ci --prefix server
           npx playwright install --with-deps chromium
+      - run: npm test
+      - run: npm audit --audit-level=moderate
+      - run: npm audit --prefix server --audit-level=moderate
+      - run: node tools/update-cache.cjs --check
       - name: Run game interaction tests, including zoom
         run: |
           mkdir -p /tmp/lilopia-e2e
           node tests/e2e/interactions.js "$GITHUB_WORKSPACE/index.html" /tmp/lilopia-e2e
       - name: Run screen and save/continue checks
         run: node tests/e2e/screens.js "$GITHUB_WORKSPACE/index.html" /tmp/lilopia-e2e
+      - run: node tests/e2e/pwa.js
       - name: Run Android release UI contract
         run: node tests/e2e/android-release.js
       - run: bash android/gradlew -p android bundleRelease lintRelease testReleaseUnitTest --console=plain
       - uses: actions/upload-artifact@v4
         with:
           name: lilopia-unsigned-release-candidate
+          if-no-files-found: error
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/reports/lint-results-release.html

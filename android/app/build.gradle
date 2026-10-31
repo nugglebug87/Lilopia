@@ -18,25 +18,30 @@ def copyGame = tasks.register('copyGame', Sync) {
             return inPwa ? null : line
         }
     }
-    from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**', 'privacy-policy.html', 'terms-of-use.html', 'privacy-policy.html', 'terms-of-use.html' }
+    from(gameRoot) { include 'src/**', 'assets/**', 'fonts/**', 'privacy-policy.html', 'terms-of-use.html' }
     into gameAssets.map { it.dir('game') }
 }
 
 // Optional release signing: put these in android/keystore.properties (never commit it).
 def ksFile = rootProject.file('keystore.properties')
 def ks = new Properties()
-if (ksFile.exists()) ksFile.withInputStream { ks.load(it) }
+if (ksFile.exists()) {
+    ksFile.withInputStream { ks.load(it) }
+    if (['storeFile', 'storePassword', 'keyAlias', 'keyPassword'].any { !ks[it] }) {
+        throw new GradleException('Upload signing configuration is incomplete; provide all four properties locally')
+    }
+}
 
 android {
-    namespace 'com.lilopia.game'
+    namespace = 'com.lilopia.game'
     compileSdk 36
 
     defaultConfig {
         applicationId 'com.lilopia.game'
         minSdk 24
         targetSdk 36
-        versionCode = providers.gradleProperty('versionCode').getOrElse('2').toInteger()
-        versionName '1.0.0'
+        versionCode = providers.gradleProperty('versionCode').getOrElse('3').toInteger()
+        versionName '1.0.1'
         def verifier = providers.gradleProperty('verificationUrl').getOrElse('')
         if (verifier && !(verifier ==~ /https:\/\/[a-zA-Z0-9.-]+(?::443)?\/[^\s"\\]*/)) {
             throw new GradleException('verificationUrl must be an HTTPS endpoint without quotes or escapes')
@@ -63,7 +68,7 @@ android {
         }
     }
 
-    buildFeatures { buildConfig true }
+    buildFeatures { buildConfig = true }
     sourceSets {
         main.assets.srcDir gameAssets
     }
@@ -77,6 +82,9 @@ android {
 tasks.named('preBuild') { dependsOn copyGame }
 
 dependencies {
-    implementation 'androidx.webkit:webkit:1.12.1'
-    implementation 'com.android.billingclient:billing:8.0.0'
+    testImplementation 'junit:junit:4.13.2'
+    // Align legacy jdk7/jdk8 transitive artifacts with the merged Kotlin standard library.
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:2.2.21')
+    implementation 'androidx.webkit:webkit:1.18.0'
+    implementation 'com.android.billingclient:billing:9.1.0'
 }

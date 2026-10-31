@@ -10,16 +10,18 @@ This repository holds the **first playable build** described in Section 18 of th
 
 Open `index.html` in a current browser (Chrome, Edge, Safari or Firefox). There is no build step and nothing is loaded from the internet. To test the installable web app locally, serve the folder, for example `python3 -m http.server`, and open `http://localhost:8000`.
 
-Run the automated tests with Node 18 or newer:
+Run the automated tests with Node 24 or newer:
 
 ```sh
 npm test            # same as: node --test tests/*.test.js
 ```
 
+Install repeatable test dependencies with `npm ci` and `npx playwright install chromium`.
+
 Browser tests (need [Playwright](https://playwright.dev)) drive the real game with pointer drags and save screenshots:
 
 ```sh
-node tests/e2e/interactions.js "$PWD/index.html" /tmp/shots   # 24 checks: cooking, garden, pets, market, babies, decorating, purchases
+node tests/e2e/interactions.js "$PWD/index.html" /tmp/shots   # 35 checks: cooking, garden, pets, market, babies, decorating, purchases
 node tests/e2e/screens.js "$PWD/index.html" /tmp/shots        # every screen at desktop and phone sizes, plus save and continue
 ```
 
@@ -28,7 +30,7 @@ node tests/e2e/screens.js "$PWD/index.html" /tmp/shots        # every screen at 
 LILOPIA is an installable web app (a PWA). It can be added to a phone's home screen or a computer's desktop, opens full screen like an app, and works offline after the first visit.
 
 - `manifest.webmanifest` names the app, sets landscape full screen and lists the icons in `icons/`.
-- `sw.js` stores a copy of every game file so the game opens instantly and offline. **When you change any game file, bump `VERSION` in `sw.js`** so players get the update. A test checks that `sw.js` lists every file the page uses.
+- `sw.js` stores a copy of every game file so the game opens instantly and offline. **After changing any cached asset, run `node tools/update-cache.cjs`** so players get the update. A test checks that `sw.js` lists every file the page uses.
 - The fonts are bundled in `fonts/`, so nothing is loaded from other sites.
 - In Chrome, Edge and Android browsers, Settings shows **Install LILOPIA on this device**. On iPhone and iPad, use Share, then Add to Home Screen.
 
@@ -40,19 +42,19 @@ LILOPIA is an installable web app (a PWA). It can be added to a phone's home scr
 2. On GitHub, open the repo's **Settings > Pages** and set **Source** to **GitHub Actions**.
 3. The game appears at `https://nugglebug87.github.io/Lilopia/` after the workflow finishes (Actions tab).
 
-Any static web host works too: upload `index.html`, `manifest.webmanifest`, `sw.js`, `src/`, `assets/`, `fonts/` and `icons/`. The service worker needs HTTPS (or `localhost`); opening `index.html` straight from disk still works, just without offline install.
+Any static web host works too: upload `index.html`, `manifest.webmanifest`, `sw.js`, `privacy-policy.html`, `terms-of-use.html`, `src/`, `assets/`, `fonts/` and `icons/`. The service worker needs HTTPS (or `localhost`); opening `index.html` straight from disk still works, just without offline install.
 
 ## Android app
 
 The Android Play candidate is prepared in [PR #4](https://github.com/nugglebug87/Lilopia/pull/4). It wraps the bundled game files in a native Android app and keeps gameplay offline.
 
-- Package: `com.lilopia.game`; version 1.0.0, version code 2; minimum API 24, target API 36.
-- The candidate uses landscape orientation, disables Android backup, and declares internet, network-state and Google Play Billing permissions.
+- Package: `com.lilopia.game`; version 1.0.1, version code 3; minimum API 24, target API 36.
+- The candidate supports device rotation, disables Android backup, and declares internet, network-state and Google Play Billing permissions.
 - The release build is unsigned unless a protected upload key is configured; it never falls back to a debug signing key. Do not upload an unsigned bundle.
 - Play purchases are deliberately unavailable until the build is configured with a deployed HTTPS purchase verifier. Keep them disabled for gameplay-only testing.
 - The game save stays on the device. Clearing app storage or uninstalling removes it; there is no cloud sync or purchase restore for free gameplay data.
 
-See [PLAY-RELEASE.md](PLAY-RELEASE.md) for the build, Console and billing handoff, and [VALIDATION.md](VALIDATION.md) for recorded checks and limits. The current validation record distinguishes historical test results from the October 26 game updates. Play-distributed and physical-device checks still need to be completed.
+See [PLAY-RELEASE.md](PLAY-RELEASE.md) for the build, Console and billing handoff, and [VALIDATION.md](VALIDATION.md) for recorded checks and limits. See RELEASE-READINESS.md for the coordinated repair pass and remaining release gates. Play-distributed and physical-device checks still need to be completed.
 
 ## How the first build maps to Section 18
 
@@ -85,7 +87,7 @@ See [PLAY-RELEASE.md](PLAY-RELEASE.md) for the build, Console and billing handof
 - **Lilo Coins and the market** (Section 10): take food from shelves into a basket, drop the basket on the checkout to pay, and sell garden produce there. Coins can only be earned by playing.
 - **Free will** (Section 13): people choose what to do based on personality (calm is the neutral default), and the player can turn this off.
 - **Premium content system** (Sections 11 and 12): every premium item has a content ID, product ID, category, price and ownership state, and stays visible with a lock. Purchases go through a parental gate, then a parent purchase screen. The store has Restore purchases.
-- **Child safety and accessibility** (Section 14): no chat, ads, accounts, location sharing or personal data. Large touch targets, icon-first navigation, adjustable sound effects and music, a reduce-motion setting and a parental gate for purchases and the parents' store.
+- **Child safety and accessibility** (Section 14): no chat, ads, accounts or location sharing. Saves stay local; enabled native billing uses purchase identifiers and Google SDK diagnostics. Large touch targets, icon-first navigation, adjustable sound effects and music, a reduce-motion setting and a parental gate for purchases and the parents' store.
 
 ## Product catalog
 
