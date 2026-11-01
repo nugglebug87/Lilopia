@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
     private static final String START_URL = "https://" + HOST + "/assets/game/index.html";
 
     private WebView web;
+    private PlayBillingManager billing;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +36,7 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setBackgroundColor(0xFFF6EEFF);
         setContentView(web);
+        billing = new PlayBillingManager(this);
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .setDomain(HOST)
@@ -93,6 +95,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
+        if (billing != null) billing.refreshPurchases();
         hideSystemBars();
     }
 
@@ -110,6 +113,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (billing != null) billing.close();
         web.destroy();
         super.onDestroy();
     }
