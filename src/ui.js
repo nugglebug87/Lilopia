@@ -10,6 +10,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const S = () => G.state();
 const sfx = n => L.sfx(n);
 const play = globalThis.LilopiaAndroid;
+const storeName = play && typeof play.storeName === 'function' ? play.storeName() : 'Google Play';
 const owned = pid => play ? (logic.isOwned(S(), pid) ? 'verified' : null) : S().owned[pid];
 const price = p => play ? (play.price(p.productId) || 'Store unavailable') : p.price;
 globalThis.lilopiaStoreChanged = message => {
@@ -552,7 +553,7 @@ function openPreview(pid) {
     else if (!p.available) row.appendChild(el('span', 'pill soon', 'Coming soon'));
     body.appendChild(row);
     if (!how && !p.available) body.appendChild(el('p', 'fine', 'This pack is still being built, so it cannot be bought yet. It stays on the map so you can see what is coming.'));
-    if (!how && p.available) body.appendChild(el('p', 'fine', play ? 'Only a grown-up can buy packs through Google Play. Purchases must be verified before packs unlock.' : 'Only a grown-up can unlock packs. Purchases in this prototype are simulated and no money is charged.'));
+    if (!how && p.available) body.appendChild(el('p', 'fine', play ? `Only a grown-up can buy packs through ${storeName}. Purchases must be verified before packs unlock.` : 'Only a grown-up can unlock packs. Purchases in this prototype are simulated and no money is charged.'));
     box.appendChild(body);
     const foot = el('footer'); foot.appendChild(el('span', 'sp'));
     const close = el('button', 'btn', 'Close'); close.addEventListener('click', closeSheet); foot.appendChild(close);
@@ -588,11 +589,11 @@ function openPurchase(pid) {
     box.classList.add('narrow'); sheetHead(box, 'Confirm purchase', 'Parent purchase screen');
     const body = el('div', 'body');
     body.appendChild(el('div', 'gateq', `${esc(p.name)}: ${esc(price(p))}`));
-    body.appendChild(el('p', 'fine', play ? 'Google Play confirms the final price. Packs unlock only after payment verification. If payment is pending or verification is unavailable, try Restore purchases later.' : `Store product ${esc(p.productId)}. This prototype simulates the store, so no money is charged.`));
+    body.appendChild(el('p', 'fine', play ? `${storeName} confirms the final price. Packs unlock only after payment verification. If payment is pending or verification is unavailable, try Restore purchases later.` : `Store product ${esc(p.productId)}. This prototype simulates the store, so no money is charged.`));
     box.appendChild(body);
     const foot = el('footer'); foot.appendChild(el('span', 'sp'));
     const cancel = el('button', 'btn', 'Cancel'); cancel.addEventListener('click', closeSheet);
-    const buy = el('button', 'btn pink', svg('check') + (play ? 'Buy with Google Play' : 'Buy (simulated)'));
+    const buy = el('button', 'btn pink', svg('check') + (play ? `Buy with ${storeName}` : 'Buy (simulated)'));
     buy.disabled = !!play && !play.available(p.productId);
     buy.addEventListener('click', () => { if (play) { play.buy(p.productId); return; } G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); closeSheet(); if (stack.length) drawSheet(); renderDock(); });
     foot.append(cancel, buy); box.appendChild(foot);
@@ -600,7 +601,7 @@ function openPurchase(pid) {
 }
 function openStore() {
   pushSheet(box => {
-    sheetHead(box, 'Parents: store and purchases', play ? 'Optional expansion packs. Google Play supplies local prices.' : 'Every expansion is $5.99. Purchases are simulated in this prototype.');
+    sheetHead(box, 'Parents: store and purchases', play ? `Optional expansion packs. ${storeName} supplies local prices.` : 'Every expansion is $5.99. Purchases are simulated in this prototype.');
     const body = el('div', 'body');
     for (const [pid, p] of Object.entries(L.PRODUCTS)) {
       const row = el('div', 'prow'), how = owned(pid);
@@ -609,7 +610,7 @@ function openStore() {
       const acts = el('div', 'acts');
       if (how) acts.appendChild(el('span', 'pill ' + (how === 'dev' ? 'dev' : 'owned'), how === 'dev' ? 'Dev flag' : 'Owned'));
       else if (!p.available) acts.appendChild(el('span', 'pill soon', 'Coming soon'));
-      else { const b = el('button', 'btn primary', play ? 'Buy with Google Play' : 'Buy (simulated)'); b.disabled = !!play && !play.available(p.productId); b.addEventListener('click', () => { if (play) { openPurchase(pid); return; } G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); drawSheet(); renderDock(); }); acts.appendChild(b); }
+      else { const b = el('button', 'btn primary', play ? `Buy with ${storeName}` : 'Buy (simulated)'); b.disabled = !!play && !play.available(p.productId); b.addEventListener('click', () => { if (play) { openPurchase(pid); return; } G.grant(pid, 'simulated'); sfx('ding'); toast(`${p.name} unlocked`); drawSheet(); renderDock(); }); acts.appendChild(b); }
       const info = el('button', 'btn', 'Details'); info.addEventListener('click', () => openPreview(pid)); acts.appendChild(info);
       row.appendChild(acts); body.appendChild(row);
     }
@@ -662,7 +663,7 @@ function openSettings(fromTitle) {
       legal.appendChild(link);
     }
     body.appendChild(el('p', 'sec', 'Legal')); body.appendChild(legal);
-    body.appendChild(el('p', 'fine', play ? 'LILOPIA has no chat, ads, accounts or location sharing. Your world saves on this device. Purchases send the product ID and Google Play purchase token to our verification service and Google Play. Packs require an online check after opening the app. Clear Android app storage to delete your saved world.' : 'LILOPIA has no chat, no ads, no accounts and no location sharing, and collects no personal information. Your world saves automatically on this device.'));
+    body.appendChild(el('p', 'fine', play ? `LILOPIA has no chat, ads, accounts or location sharing. Your world saves on this device. ${storeName === 'Galaxy Store' ? 'Samsung processes purchases. Product and purchase identifiers are checked with Samsung to verify and restore your packs.' : 'Purchases send the product ID and Google Play purchase token to our verification service and Google Play.'} Packs require an online check after opening the app. Clear Android app storage to delete your saved world.` : 'LILOPIA has no chat, no ads, no accounts and no location sharing, and collects no personal information. Your world saves automatically on this device.'));
     box.appendChild(body);
     const foot = el('footer');
     if (!fromTitle) {

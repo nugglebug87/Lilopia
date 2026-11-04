@@ -6,11 +6,12 @@ const { pathToFileURL } = require('node:url');
 (async () => {
   const browser = await chromium.launch();
   try {
+    for (const storeName of ['Google Play', 'Galaxy Store']) {
     const page = await browser.newPage({ viewport: { width: 1000, height: 600 } });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
-    await page.addInitScript(() => {
-      window.LilopiaAndroid = { owns: () => false, price: () => '', available: () => false, restore: () => {}, buy: () => { throw Error('Payment must stay disabled'); } };
-    });
+    await page.addInitScript(name => {
+      window.LilopiaAndroid = { storeName: () => name, owns: () => false, price: () => '', available: () => false, restore: () => {}, buy: () => { throw Error('Payment must stay disabled'); } };
+    }, storeName);
     await page.goto(pathToFileURL(path.resolve('index.html')).href);
     await page.click('#newBtn');
     await page.locator('#sheetBox .btn.primary').click();
@@ -31,12 +32,14 @@ const { pathToFileURL } = require('node:url');
     const match = question.match(/What is (\w+) times (\w+)\?/);
     await page.locator('#gateAnswer').fill(String(words.indexOf(match[1]) * words.indexOf(match[2])));
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
-    const buttons = page.getByRole('button', { name: 'Buy with Google Play', exact: true });
+    const buttons = page.getByRole('button', { name: `Buy with ${storeName}`, exact: true });
     assert.ok(await buttons.count() >= 3);
     for (const button of await buttons.all()) assert.equal(await button.isEnabled(), false);
     assert.equal(await page.getByRole('button', { name: 'Buy (simulated)', exact: true }).count(), 0);
     assert.deepEqual(errors, []);
     console.log('PASS Android rejects simulated grant, blocks premium travel, sanitizes forged saved scene, hides development controls, and disables payment without verifier; no browser errors');
-    await page.screenshot({ path: '../android-ui-contract.png' });
+    await page.screenshot({ path: `../android-ui-contract-${storeName.replace(/ /g, '-').toLowerCase()}.png` });
+    await page.close();
+    }
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

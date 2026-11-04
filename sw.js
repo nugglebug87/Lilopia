@@ -1,6 +1,6 @@
 /* LILOPIA service worker: keeps a copy of every game file so the web app works offline.
    Run node tools/update-cache.cjs after changing a cached file. CI checks its digest. */
-const VERSION = 'lilopia-b5a4c87cfe120efa3e36';
+const VERSION = 'lilopia-77114c60865f974e1872';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'privacy-policy.html', 'terms-of-use.html',
   'assets/logo.webp', 'fonts/fonts.css', 'fonts/baloo2-4a324d.woff2', 'fonts/nunito-798ec6.woff2',

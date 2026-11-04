@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /** Native Play billing. Only a positive response from the configured verifier grants access. */
-public final class PlayStore implements PurchasesUpdatedListener {
+public final class PlayStore implements PurchasesUpdatedListener, StoreBridge {
     private static final Set<String> PRODUCTS = new HashSet<>(Arrays.asList(
         "com.lilopia.expansion.dream_mansion", "com.lilopia.expansion.beach_vacation",
         "com.lilopia.expansion.city_life"));
@@ -55,6 +55,7 @@ public final class PlayStore implements PurchasesUpdatedListener {
             public void onBillingServiceDisconnected() { connecting = false; details.clear(); notifyWeb("Store disconnected. Please try again."); }
         });
     }
+    @JavascriptInterface public String storeName() { return "Google Play"; }
     @JavascriptInterface public boolean owns(String id) { return owned.contains(id); }
     @JavascriptInterface public String price(String id) {
         ProductDetails d = details.get(id);
@@ -100,7 +101,7 @@ public final class PlayStore implements PurchasesUpdatedListener {
             notifyWeb("");
         });
     }
-    void refresh() {
+    public void refresh() {
         if (closed) return;
         if (BuildConfig.VERIFICATION_URL.isEmpty()) { notifyWeb("Purchases are not enabled in this build."); return; }
         if (!client.isReady()) { connect(); notifyWeb("Connecting to Google Play. Please try again shortly."); return; }
@@ -171,5 +172,5 @@ public final class PlayStore implements PurchasesUpdatedListener {
             if (!closed) web.evaluateJavascript("window.lilopiaStoreChanged && window.lilopiaStoreChanged(" + JSONObject.quote(message) + ")", null);
         });
     }
-    void close() { closed = true; client.endConnection(); worker.shutdownNow(); }
+    public void close() { closed = true; client.endConnection(); worker.shutdownNow(); }
 }

@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     private static final String START_URL = "https://" + HOST + "/assets/game/index.html";
 
     private WebView web;
-    private PlayStore store;
+    private StoreBridge store;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +36,7 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setBackgroundColor(0xFFF6EEFF);
         setContentView(web);
-        store = new PlayStore(this, web);
+        store = StoreFactory.create(this, web);
         web.addJavascriptInterface(store, "LilopiaAndroid");
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
