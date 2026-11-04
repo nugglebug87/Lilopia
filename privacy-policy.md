@@ -12,7 +12,7 @@ We do not intentionally collect children's personal information through the curr
 
 ## Purchases and advertising
 
-The current game includes simulated purchase flows; they do **not** process real payments. If real in-app purchases are enabled in a future release, payments will be handled by the applicable app store. We will update this policy to describe any purchase identifiers or verification services used before enabling real transactions.
+The web game includes simulated purchase flows; they do **not** process real payments. The Android test build has purchases disabled and does not complete real payments. If real in-app purchases are enabled in a future release, payments will be handled by the applicable app store. We will update this policy to describe any purchase identifiers or verification services used before enabling real transactions.
 
 The current game does not display advertisements. If advertising is added later, we will review the advertising provider's data practices, apply child-appropriate safeguards, and update this policy before release. We will not describe the game as ad-free if advertising is enabled.
 

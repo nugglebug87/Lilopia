@@ -141,3 +141,16 @@ test('tiger, kangaroo, monkey and elephant can be adopted for free with sensible
   assert.equal(logic.makePet({ species: 'tiger', breed: 'Bengal Tiger' }).size, 'large');
   assert.ok(logic.isLocked(s, 'pet:panda'), 'panda stays in Pet Paradise');
 });
+
+test('save recovery drops corrupt entries without discarding the household or mutating input', () => {
+  const raw = logic.newGame();
+  raw.scenes['home/living'].items.push(null, { type: '__proto__' });
+  raw.chars.push(null); raw.pets.push(null); raw.bag.push(null);
+  raw.scene = '__proto__'; raw.chars[0].scene = 'constructor';
+  const before = JSON.stringify(raw);
+  const restored = logic.migrate(raw);
+  assert.ok(restored.chars.length > 0);
+  assert.equal(restored.scene, 'home/living'); assert.equal(restored.chars[0].scene, 'home/living');
+  assert.ok(restored.scenes['home/living'].items.every(i => i && Object.hasOwn(L.OBJECTS, i.type)));
+  assert.equal(JSON.stringify(raw), before);
+});

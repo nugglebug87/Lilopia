@@ -164,4 +164,5 @@ const out = process.argv[3];
   console.log(results.join('\n'));
   console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'NO ERRORS');
   await b.close();
+  if (errs.length || results.some(r => !r.startsWith('PASS '))) process.exitCode = 1;
 })();

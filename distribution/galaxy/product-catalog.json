@@ -1,0 +1,31 @@
+{
+  "package": "com.lilopia.game.samsung",
+  "source": "Play release source 16ed594; live Play Console has no configured one-time products or subscriptions as checked November 4, 2026",
+  "items": [
+    {
+      "id": "com.lilopia.expansion.dream_mansion",
+      "title": "Dream Mansion",
+      "type": "item",
+      "entitlement": "permanent; acknowledge, never consume",
+      "intended_base_price_usd": "5.99",
+      "description": "Unlock the Dream Mansion location with its castle bed, grand piano, sparkle fountain, walls and floors."
+    },
+    {
+      "id": "com.lilopia.expansion.beach_vacation",
+      "title": "Beach Vacation",
+      "type": "item",
+      "entitlement": "permanent; acknowledge, never consume",
+      "intended_base_price_usd": "5.99",
+      "description": "Unlock the Beach Vacation location and its included beach content."
+    },
+    {
+      "id": "com.lilopia.expansion.city_life",
+      "title": "City Life",
+      "type": "item",
+      "entitlement": "permanent; acknowledge, never consume",
+      "intended_base_price_usd": "5.99",
+      "description": "Unlock the City Life location and its included city content."
+    }
+  ],
+  "notes": "This is preparation data, not a Seller Portal import format or proof of registered products. Set intended base price only after eligible account access; display localized prices from Samsung SDK."
+}
