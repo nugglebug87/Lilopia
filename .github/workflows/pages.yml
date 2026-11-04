@@ -38,7 +38,7 @@ jobs:
       - name: Collect the web app files
         run: |
           mkdir site
-          cp -r index.html manifest.webmanifest sw.js privacy-policy.html terms-of-use.html src assets fonts icons site/
+          cp -r index.html manifest.webmanifest sw.js privacy-policy.html terms-of-use.html src assets fonts icons galaxy site/
           touch site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
