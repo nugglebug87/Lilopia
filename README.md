@@ -6,7 +6,7 @@ LILOPIA is an open-ended 2.5D life-simulation and pretend-play game: one world f
 
 This repository holds the **first playable build** described in Section 18 of the LILOPIA master build prompt (Version 2.0).
 
-[Visit the LILOPIA Kids website](https://nugglebug87.github.io/Lilopia/website/) for gameplay, pricing, and parent information.
+[Visit the LILOPIA Kids website](https://lilopia.com/) for gameplay, pricing, and parent information.
 
 ## Play it
 
@@ -40,7 +40,7 @@ LILOPIA is an installable web app (a PWA). It can be added to a phone's home scr
 
 1. Merge this branch into `main`.
 2. On GitHub, open the repo's **Settings > Pages** and set **Source** to **GitHub Actions**.
-3. The game appears at `https://nugglebug87.github.io/Lilopia/` after the workflow finishes (Actions tab).
+3. The game appears at `https://lilopia.com/play/` after the workflow finishes (Actions tab).
 
 Any static web host works too: upload `index.html`, `manifest.webmanifest`, `sw.js`, `src/`, `assets/`, `fonts/` and `icons/`. The service worker needs HTTPS (or `localhost`); opening `index.html` straight from disk still works, just without offline install.
 

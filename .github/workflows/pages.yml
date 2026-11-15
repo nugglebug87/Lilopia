@@ -29,10 +29,13 @@ jobs:
           node-version: 20
       - name: Test the game rules
         run: node --test tests/*.test.js
-      - name: Collect the web app files
+      - name: Assemble the website and browser game
         run: |
-          mkdir site
-          cp -r index.html manifest.webmanifest sw.js src assets fonts icons privacy-policy.html terms-of-use.html galaxy website site/
+          mkdir -p site/play
+          cp -r website galaxy fonts icons privacy-policy.html terms-of-use.html site/
+          cp -r index.html manifest.webmanifest sw.js src assets fonts icons privacy-policy.html terms-of-use.html site/play/
+          sed -i 's|href="../"|href="../play/"|' site/website/index.html
+          sed 's|href="../|href="|g; s|href="site.css"|href="website/site.css"|; s|src="images/|src="website/images/|g' site/website/index.html > site/index.html
           touch site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
