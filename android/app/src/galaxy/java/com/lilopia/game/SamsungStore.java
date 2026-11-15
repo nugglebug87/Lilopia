@@ -3,6 +3,7 @@ package com.lilopia.game;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.EditText;
@@ -44,20 +45,28 @@ public final class SamsungStore implements StoreBridge {
     @JavascriptInterface public String storeName() { return "Galaxy Store"; }
     @JavascriptInterface public boolean owns(String id) { return !closed && owned.contains(id); }
     @JavascriptInterface public String price(String id) {
+        if (id == null) return "";
         ProductVo product = catalog.get(id);
         return product == null || product.getItemPriceString() == null ? "" : product.getItemPriceString();
     }
     @JavascriptInterface public boolean available(String id) {
-        return !closed && ownershipReady && verificationHealthy && !paymentOpen.get()
-            && SamsungReceiptPolicy.PRODUCTS.contains(id) && catalog.containsKey(id) && !price(id).isEmpty();
+        return !paymentOpen.get() && canBuy(id);
+    }
+    private boolean canBuy(String id) {
+        return id != null && !closed && ownershipReady && verificationHealthy
+            && SamsungReceiptPolicy.PRODUCTS.contains(id) && !owned.contains(id) && !price(id).isEmpty();
     }
     @JavascriptInterface public void restore() { activity.runOnUiThread(this::refresh); }
     @JavascriptInterface public void buy(String id) {
-        if (!available(id) || owned.contains(id) || !paymentOpen.compareAndSet(false, true)) {
+        if (!available(id) || !paymentOpen.compareAndSet(false, true)) {
             notifyWeb("Purchase unavailable. Restore existing purchases before trying again."); return;
         }
         activity.runOnUiThread(() -> {
-            if (closed || activity.isFinishing()) { paymentOpen.set(false); return; }
+            if (activity.isFinishing() || !canBuy(id)) {
+                paymentOpen.set(false);
+                notifyWeb("Purchase unavailable. Restore existing purchases before trying again.");
+                return;
+            }
             int a = 12 + new java.security.SecureRandom().nextInt(8), b = 7;
             EditText answer = new EditText(activity); answer.setInputType(InputType.TYPE_CLASS_NUMBER);
             new AlertDialog.Builder(activity).setTitle("Grown-ups only: " + a + " × " + b + " = ?")
@@ -68,15 +77,16 @@ public final class SamsungStore implements StoreBridge {
                         paymentOpen.set(false); return;
                     }
                     try {
-                        boolean started = iap.startPayment(id, "", "", (error, purchase) -> {
-                            paymentOpen.set(false);
+                        boolean started = iap.startPayment(id, "", "", (error, purchase) -> activity.runOnUiThread(() -> {
                             if (closed) return;
+                            ownershipReady = false;
+                            paymentOpen.set(false);
                             if (error == null || error.getErrorCode() != IapHelper.IAP_ERROR_NONE || purchase == null) {
-                                notifyWeb("Purchase canceled, pending or unavailable. No new pack was unlocked."); return;
+                                notifyWeb("Checkout did not confirm a purchase. Checking Samsung ownership.");
                             }
-                            // Requery Samsung-owned items. Never grant from the payment callback alone.
+                            // Samsung may have completed payment even when the callback reports an error.
                             refresh();
-                        });
+                        }));
                         if (!started) { paymentOpen.set(false); notifyWeb("Samsung checkout could not start."); }
                     } catch (RuntimeException error) {
                         paymentOpen.set(false); notifyWeb("Samsung checkout is unavailable.");
@@ -88,16 +98,17 @@ public final class SamsungStore implements StoreBridge {
         if (closed || paymentOpen.get()) return;
         final int current = generation.incrementAndGet();
         owned = Collections.emptySet(); ownershipReady = false;
+        catalog.clear();
         notifyWeb("");
         try {
-            iap.getProductsDetails(String.join(",", SamsungReceiptPolicy.PRODUCTS), (error, list) -> {
+            iap.getProductsDetails(TextUtils.join(",", SamsungReceiptPolicy.PRODUCTS), (error, list) -> activity.runOnUiThread(() -> {
                 if (closed || current != generation.get()) return;
                 catalog.clear();
                 if (error != null && error.getErrorCode() == IapHelper.IAP_ERROR_NONE && list != null)
                     for (ProductVo product : list) if (SamsungReceiptPolicy.PRODUCTS.contains(product.getItemId())
                             && HelperDefine.PRODUCT_TYPE_ITEM.equals(product.getType())) catalog.put(product.getItemId(), product);
                 notifyWeb("");
-            });
+            }));
             boolean requested = iap.getOwnedList(HelperDefine.PRODUCT_TYPE_ITEM, (error, list) -> {
                 if (closed || current != generation.get()) return;
                 if (error == null || error.getErrorCode() != IapHelper.IAP_ERROR_NONE || list == null) {
@@ -105,7 +116,7 @@ public final class SamsungStore implements StoreBridge {
                 }
                 submit(() -> {
                     Set<String> verified = new HashSet<>();
-                    List<OwnedProductVo> acknowledge = new ArrayList<>();
+                    Set<String> acknowledge = new HashSet<>();
                     boolean healthy = true;
                     for (OwnedProductVo item : list) {
                         if (!SamsungReceiptPolicy.PRODUCTS.contains(item.getItemId())) continue;
@@ -113,30 +124,45 @@ public final class SamsungStore implements StoreBridge {
                             if (verify(item)) {
                                 verified.add(item.getItemId());
                                 if (item.getAcknowledgedStatus() == HelperDefine.AcknowledgedStatus.NOT_ACKNOWLEDGED)
-                                    acknowledge.add(item);
+                                    acknowledge.add(item.getPurchaseId());
+                            } else {
+                                // An unverified item in the owned list must not be offered for another purchase.
+                                healthy = false;
                             }
                         } catch (Exception failure) { healthy = false; }
                     }
-                    if (closed || current != generation.get()) return;
-                    owned = Collections.unmodifiableSet(verified); verificationHealthy = healthy; ownershipReady = true;
-                    notifyWeb(healthy ? "" : "A purchase could not be verified. Connect and use Restore purchases; do not buy again.");
-                    // Permanent expansions are acknowledged, never consumed. SDK preserves them for restore.
+                    boolean allVerified = healthy;
                     activity.runOnUiThread(() -> {
                         if (closed || current != generation.get()) return;
-                        for (OwnedProductVo item : acknowledge) {
-                            boolean sent = iap.acknowledgePurchases(item.getPurchaseId(), (errorAck, results) -> {
-                                if (closed || current != generation.get()) return;
-                                boolean success = errorAck != null && errorAck.getErrorCode() == IapHelper.IAP_ERROR_NONE
-                                    && results != null && results.stream().anyMatch(v -> item.getPurchaseId().equals(v.getPurchaseId()) && v.getStatusCode() == 0);
-                                if (!success) notifyWeb("Purchase delivery confirmation needs retry. Use Restore purchases.");
-                            });
-                            if (!sent) notifyWeb("Purchase delivery confirmation needs retry. Use Restore purchases.");
-                        }
+                        owned = Collections.unmodifiableSet(verified);
+                        verificationHealthy = allVerified;
+                        ownershipReady = true;
+                        notifyWeb(allVerified ? "" : "A purchase could not be verified. Connect and use Restore purchases; do not buy again.");
+                        acknowledge(current, acknowledge);
                     });
                 });
             });
             if (!requested) notifyWeb("Samsung account or store unavailable. Please try Restore purchases.");
         } catch (RuntimeException failure) { catalog.clear(); notifyWeb("Samsung store unavailable. Please try again."); }
+    }
+    private void acknowledge(int current, Set<String> purchases) {
+        if (closed || current != generation.get() || purchases.isEmpty()) return;
+        String retryMessage = "Purchase delivery confirmation needs retry. Use Restore purchases.";
+        try {
+            boolean sent = iap.acknowledgePurchases(TextUtils.join(",", purchases), (error, results) -> {
+                if (closed || current != generation.get()) return;
+                Set<String> confirmed = new HashSet<>();
+                if (error != null && error.getErrorCode() == IapHelper.IAP_ERROR_NONE && results != null) {
+                    for (var result : results) {
+                        if (result.getStatusCode() == 0) confirmed.add(result.getPurchaseId());
+                    }
+                }
+                if (!confirmed.containsAll(purchases)) notifyWeb(retryMessage);
+            });
+            if (!sent) notifyWeb(retryMessage);
+        } catch (RuntimeException failure) {
+            notifyWeb(retryMessage);
+        }
     }
     private boolean verify(OwnedProductVo item) throws Exception {
         String purchaseId = item.getPurchaseId();

@@ -11,6 +11,7 @@ public class SamsungReceiptPolicyTest {
     }
     @Test public void verifiedPermanentProductAccepted() {
         assertTrue(accepts("success",pack,item,"payment-1","PRODUCTION","N",false));
+        assertTrue(accepts("success",pack,item,"payment-1","PRODUCTION","",false));
     }
     @Test public void productionRejectsTestReceipts() {
         assertFalse(accepts("success",pack,item,"payment-1","TEST","N",false));
@@ -29,7 +30,7 @@ public class SamsungReceiptPolicyTest {
         assertFalse(accepts("success",pack,item,"somebody-elses-payment","PRODUCTION","N",false));
     }
     @Test public void consumedAndIncompleteReceiptsCannotUnlock() {
-        for (String value : new String[]{"Y","", "false"})
+        for (String value : new String[]{"Y", "false"})
             assertFalse(accepts("success",pack,item,"payment-1","PRODUCTION",value,false));
         assertFalse(accepts("success",pack,item,"","PRODUCTION","N",false));
     }

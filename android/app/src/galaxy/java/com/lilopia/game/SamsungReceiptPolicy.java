@@ -13,6 +13,7 @@ final class SamsungReceiptPolicy {
             && "success".equals(status) && expectedPackage.equals(packageName)
             && expectedItem.equals(itemId) && expectedPayment.equals(paymentId)
             && (testBuild ? "TEST".equals(mode) : "PRODUCTION".equals(mode))
-            && "N".equals(consumed);
+            // Samsung documents consumeYN for consumables only.
+            && ("N".equals(consumed) || consumed.isEmpty());
     }
 }

@@ -6,6 +6,9 @@ plugins {
 // It is copied into the APK at build time so there is one copy of the game to maintain.
 def galaxyBuild = providers.gradleProperty('distribution').getOrElse('play') == 'galaxy'
 def galaxyTest = providers.gradleProperty('galaxyTest').getOrElse('false') == 'true'
+if (galaxyTest && !galaxyBuild) {
+    throw new GradleException('galaxyTest requires distribution=galaxy')
+}
 def gameRoot = rootProject.file('..')
 def gameAssets = layout.buildDirectory.dir('generated/gameAssets')
 
@@ -52,8 +55,9 @@ android {
         applicationId galaxyBuild ? 'com.lilopia.game.samsung' : 'com.lilopia.game'
         minSdk 24
         targetSdk 36
-        versionCode = providers.gradleProperty('versionCode').getOrElse(galaxyBuild ? '4' : '3').toInteger()
-        versionName galaxyBuild ? '1.1.0' : '1.0.1'
+        def defaultVersionCode = galaxyBuild ? (galaxyTest ? '5' : '4') : '3'
+        versionCode = providers.gradleProperty('versionCode').getOrElse(defaultVersionCode).toInteger()
+        versionName galaxyBuild ? (galaxyTest ? '1.1.0-sandbox' : '1.1.0') : '1.0.1'
         buildConfigField 'boolean', 'GALAXY_TEST', galaxyTest.toString()
         def verifier = providers.gradleProperty('verificationUrl').getOrElse('')
         if (verifier && !(verifier ==~ /https:\/\/[a-zA-Z0-9.-]+(?::443)?\/[^\s"\\]*/)) {
