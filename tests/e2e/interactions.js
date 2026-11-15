@@ -63,10 +63,20 @@ const out = process.argv[3];
   check('Lila wears the dino costume', await ev(`L.game.state().chars.find(c => c.name === 'Lila').costume === 'dino'`));
   await dragTo(`e => e.name === 'Lila'`, `e => e.type === 'bed'`, -10);
   check('Lila sleeps in bed', await ev(`(L.game.state().chars.find(c => c.name === 'Lila')._use || {}).pose === 'sleep'`));
-  await ev(`(() => { const G = L.game; G.addChar({ name: 'Pip', age: 'baby', hair: 'tuft', role: 'baby' }); G.bringHere(G.state().chars.find(c => c.name === 'Rosa')); G.select(null); })()`);
+  await p.evaluate(() => {
+    const G = L.game;
+    const pip = G.addChar({ name: 'Pip', age: 'baby', hair: 'tuft', role: 'baby' });
+    const rosa = G.state().chars.find(c => c.name === 'Rosa');
+    G.bringHere(rosa);
+    // Keep the two drag targets apart so random spawn positions cannot obscure either character.
+    Object.assign(pip, { x: .34, z: .87 });
+    Object.assign(rosa, { x: .70, z: .87 });
+    G.select(null);
+  });
   await p.waitForTimeout(500);
   await dragTo(`e => e.name === 'Pip'`, `e => e.name === 'Rosa'`);
-  check('Rosa holds baby Pip', await ev(`(L.game.state().chars.find(c => c.name === 'Rosa')._hold || {}).kind === 'char'`));
+  check('Rosa holds baby Pip', await p.evaluate(() =>
+    L.game.state().chars.find(c => c.name === 'Rosa')._hold?.ch?.name === 'Pip'));
   await p.waitForTimeout(300); await p.screenshot({ path: out + '/32-bedroom.png' });
   await ev(`L.game.releaseHold(L.game.state().chars.find(c => c.name === 'Rosa'))`); await p.waitForTimeout(300);
   await dragTo(`e => e.name === 'Pip'`, `e => e.type === 'crib'`, -10);
@@ -164,4 +174,5 @@ const out = process.argv[3];
   console.log(results.join('\n'));
   console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'NO ERRORS');
   await b.close();
+  if (errs.length || results.some(r => !r.startsWith('PASS '))) process.exitCode = 1;
 })();

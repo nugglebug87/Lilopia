@@ -2,6 +2,7 @@
    Needs Playwright. Usage: node tests/e2e/screens.js "$PWD/index.html" /tmp/shots */
 const { chromium } = require('playwright');
 const out = process.argv[3];
+const assert = require('node:assert/strict');
 (async () => {
   const b = await chromium.launch(); const errs = [];
   const p = await b.newPage({ viewport: { width: 1280, height: 800 } });
@@ -65,11 +66,14 @@ const out = process.argv[3];
   await p.click('#decoBtn'); await p.waitForTimeout(500); await p.screenshot({ path: out + '/16-decorate.png' });
   await p.click('#todBtn'); await p.click('#todBtn'); await p.waitForTimeout(500); await p.screenshot({ path: out + '/17-night.png' });
   // save and reload
+  const beforeSave = await p.evaluate(() => ({ chars: L.game.state().chars.length, pets: L.game.state().pets.length }));
   const saved = await p.evaluate(() => L.game.saveNow());
   await p.reload(); await p.waitForSelector('#title:not([hidden])', { timeout: 8000 });
   const cont = await p.isVisible('#continueBtn'); console.log('saved', saved, 'continue visible', cont);
   await p.click('#continueBtn'); await p.waitForTimeout(800);
   console.log('chars after reload', await p.evaluate(() => L.game.state().chars.length), 'pets', await p.evaluate(() => L.game.state().pets.length));
+  assert.equal(saved, true); assert.equal(cont, true);
+  assert.deepEqual(await p.evaluate(() => ({ chars: L.game.state().chars.length, pets: L.game.state().pets.length })), beforeSave);
   // phone
   const m = await b.newPage({ viewport: { width: 844, height: 390 } });
   m.on('pageerror', e => errs.push('phone ' + e.message));
@@ -81,4 +85,5 @@ const out = process.argv[3];
   await m2.click('#mapBtn'); await m2.waitForTimeout(800); await m2.screenshot({ path: out + '/21-phone-map.png' });
   console.log(errs.length ? errs.join('\n') : 'NO ERRORS');
   await b.close();
+  assert.deepEqual(errs, [], 'No browser errors');
 })();
