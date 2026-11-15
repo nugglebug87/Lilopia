@@ -16,7 +16,7 @@ We may fix bugs, add or remove features, adjust content, or temporarily interrup
 
 Basic gameplay is intended to be free. Some additional locations, items, cosmetics, seasonal content, or expansion packs may be displayed as locked until purchased. Planned expansion packs are priced at **US $5.99 each**, and a planned one-time ad-removal purchase is **US $3.99**, where offered. Prices, taxes, availability, and regional currency conversions will be shown by the relevant app store before payment.
 
-**Important:** The current game uses simulated purchase flows and does not process real payments. No purchase is completed merely by interacting with the current simulated store. Real-money purchases will be offered only after app-store billing is properly implemented and enabled.
+**Important:** The web game uses simulated purchase flows. The Android test build has purchases disabled. Neither completes real payments. No purchase is completed merely by interacting with the current simulated store. Real-money purchases will be offered only after app-store billing is properly implemented and enabled.
 
 When real purchases become available, eligible permanent purchases will unlock the described content in accordance with the purchase terms shown at checkout. Restoration across devices may depend on the store account and supported verification features. Do not assume that locally saved simulated ownership transfers between devices.
 
@@ -60,7 +60,7 @@ We may update these terms as LILOPIA develops. The latest version will be posted
 
 For questions about LILOPIA or these terms, contact:
 
-**Unfiltered Ink**  
+**Unfiltered Ink**
 **Email:** Unfilteredinink@gmail.com
 
 These terms are intended for general publication and should be reviewed against the final Android release, enabled services, and applicable law before Google Play launch.

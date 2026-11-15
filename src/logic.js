@@ -20,7 +20,13 @@ function lookKey(field, value) {
   return prefix + ':' + (field === 'hairColor' && value[0] === '#' ? value.toLowerCase() : value).replace('#7fe0c4', 'mint');
 }
 const contentProduct = id => contentIndex[id] || null;
-const isOwned = (state, pid) => !!(state && state.owned && state.owned[pid]);
+const isOwned = (state, pid) => {
+  if (globalThis.LilopiaAndroid) {
+    try { return !!PRODUCTS[pid] && globalThis.LilopiaAndroid.owns(PRODUCTS[pid].productId); }
+    catch (_) { return false; }
+  }
+  return !!(state && state.owned && state.owned[pid]);
+};
 const isLocked = (state, contentId) => { const p = contentProduct(contentId); return !!p && !isOwned(state, p); };
 const lookLocked = (state, field, value) => isLocked(state, lookKey(field, value));
 
