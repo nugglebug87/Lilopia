@@ -1,0 +1,96 @@
+@font-face {
+  font-family: Nunito;
+  src: url("../fonts/nunito-798ec6.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../fonts/baloo2-4a324d.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+:root {
+  color-scheme: light;
+  --ink: #291d3c;
+  --muted: #564766;
+  --purple: #6331a7;
+  --line: #e9dff2;
+  --paper: #fffcf9;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 1rem/1.55 Nunito, system-ui, sans-serif;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--purple); text-underline-offset: .21em; }
+a:focus-visible { outline: 3px solid #6329ae; outline-offset: 4px; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3, .brand { font-family: "Baloo 2", Nunito, system-ui, sans-serif; }
+h1 { font-size: clamp(2.7rem, 7vw, 5.75rem); line-height: .97; letter-spacing: -.04em; }
+h2 { font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.04; letter-spacing: -.025em; }
+h3 { font-size: 1.45rem; line-height: 1.15; }
+p { color: var(--muted); }
+.wrap { width: min(1120px, calc(100% - 2.25rem)); margin-inline: auto; }
+.bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .15rem 1.5rem; padding-block: .65rem; }
+.top { background: #fffafc; border-bottom: 1px solid var(--line); }
+.brand { display: inline-flex; align-items: center; gap: .38rem; color: var(--ink); font-weight: 800; font-size: 1.45rem; text-decoration: none; }
+.brand img { border-radius: .55rem; }
+.brand span { color: var(--purple); }
+nav { display: flex; flex-wrap: wrap; gap: 0 1.15rem; }
+nav a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 800; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+.skip { position: absolute; left: 1rem; top: -5rem; background: white; padding: .8rem 1rem; z-index: 1; }
+.skip:focus { top: 1rem; }
+.hero {
+  padding-block: clamp(2.6rem, 6vw, 5rem) 0;
+  background: radial-gradient(ellipse at 14% 15%, #ffe6f3, transparent 55%), radial-gradient(ellipse at 92% 18%, #e1efff, transparent 52%), linear-gradient(#f8edff, var(--paper));
+}
+.intro { text-align: center; }
+.label { color: var(--purple); font-size: .78rem; font-weight: 900; letter-spacing: .15em; margin-bottom: .8rem; }
+h1 em { color: var(--purple); font-style: normal; }
+.intro > p:not(.label) { max-width: 34rem; margin: 1rem auto 1.35rem; font-size: clamp(1rem, 2vw, 1.2rem); }
+.button {
+  display: inline-flex;
+  gap: .65rem;
+  align-items: center;
+  background: #6331a7;
+  color: white;
+  padding: .78rem 1.35rem;
+  border-radius: 99px;
+  box-shadow: 0 4px 0 #421c77;
+  text-decoration: none;
+  font-weight: 900;
+}
+.button:hover { background: #51228f; }
+.hero-art {
+  margin: clamp(2rem, 5vw, 3.5rem) auto 0;
+  width: 100%;
+  border: 5px solid white;
+  border-radius: clamp(1.2rem, 4vw, 2rem);
+  box-shadow: 0 18px 50px #51367420;
+}
+.section { padding-block: clamp(3.5rem, 7vw, 6rem); }
+.section-head { margin-bottom: 1.7rem; }
+.section-head p { margin-top: .55rem; max-width: 42rem; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.feature { border: 1px solid var(--line); background: white; border-radius: 1.4rem; overflow: hidden; }
+.feature img { width: 100%; }
+.feature > div, .price-grid article, .parent-grid article { padding: 1.2rem; }
+article h3 + p, .price + p { margin-top: .45rem; }
+.family { background: #f3ebff; }
+.parent-grid article { background: #ffffffa8; border-radius: 1.2rem; }
+.pricing { margin-top: 3.6rem; }
+.price-grid article { background: white; border: 1px solid #e1d2f2; border-radius: 1.2rem; }
+.price-grid article:first-child { background: #effaf1; border-color: #d0eadd; }
+.price { font-family: "Baloo 2", Nunito, system-ui, sans-serif; font-size: 2.6rem; font-weight: 800; line-height: 1.05; color: var(--purple); }
+.price small { font: 800 1rem Nunito, system-ui, sans-serif; }
+footer { border-top: 1px solid var(--line); font-size: .92rem; }
+footer .bar { padding-block: 1.15rem; }
+@media (max-width: 730px) {
+  .grid { grid-template-columns: 1fr; }
+  .feature > div, .price-grid article, .parent-grid article { padding: 1rem 1.15rem; }
+}

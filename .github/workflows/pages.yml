@@ -1,4 +1,4 @@
-# Publishes the LILOPIA web app to GitHub Pages after the rule tests pass.
+# Publishes the LILOPIA web app and website to GitHub Pages after the rule tests pass.
 # One-time setup: repository Settings > Pages > Build and deployment > Source: "GitHub Actions".
 name: Web app
 
@@ -32,7 +32,7 @@ jobs:
       - name: Collect the web app files
         run: |
           mkdir site
-          cp -r index.html manifest.webmanifest sw.js src assets fonts icons privacy-policy.html terms-of-use.html galaxy site/
+          cp -r index.html manifest.webmanifest sw.js src assets fonts icons privacy-policy.html terms-of-use.html galaxy website site/
           touch site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

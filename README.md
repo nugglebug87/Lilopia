@@ -6,6 +6,8 @@ LILOPIA is an open-ended 2.5D life-simulation and pretend-play game: one world f
 
 This repository holds the **first playable build** described in Section 18 of the LILOPIA master build prompt (Version 2.0).
 
+[Visit the LILOPIA Kids website](https://nugglebug87.github.io/Lilopia/website/) for gameplay, pricing, and parent information.
+
 ## Play it
 
 Open `index.html` in a current browser (Chrome, Edge, Safari or Firefox). There is no build step and nothing is loaded from the internet. To test the installable web app locally, serve the folder, for example `python3 -m http.server`, and open `http://localhost:8000`.
